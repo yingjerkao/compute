@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #ifndef BOOST_COMPUTE_ALGORITHM_DETAIL_FIND_EXTREMA_WITH_ATOMICS_HPP
@@ -22,12 +22,14 @@ namespace boost {
 namespace compute {
 namespace detail {
 
-template<class InputIterator>
+template<class InputIterator, class Compare>
 inline InputIterator find_extrema_with_atomics(InputIterator first,
                                                InputIterator last,
-                                               char sign,
+                                               Compare compare,
+                                               const bool find_minimum,
                                                command_queue &queue)
 {
+    typedef typename std::iterator_traits<InputIterator>::value_type value_type;
     typedef typename std::iterator_traits<InputIterator>::difference_type difference_type;
 
     const context &context = queue.get_context();
@@ -38,20 +40,51 @@ inline InputIterator find_extrema_with_atomics(InputIterator first,
     k <<
         "const uint gid = get_global_id(0);\n" <<
         "uint old_index = *index;\n" <<
-        "while(" << first[k.var<uint_>("gid")]
-                 << sign
-                 << first[k.var<uint_>("old_index")] << "){\n" <<
+
+        k.decl<value_type>("old") <<
+            " = " << first[k.var<uint_>("old_index")] << ";\n" <<
+        k.decl<value_type>("new") <<
+            " = " << first[k.var<uint_>("gid")] << ";\n" <<
+
+        k.decl<bool>("compare_result") << ";\n" <<
+        "#ifdef BOOST_COMPUTE_FIND_MAXIMUM\n" <<
+        "while(" <<
+            "(compare_result = " << compare(k.var<value_type>("old"),
+                                            k.var<value_type>("new")) << ")" <<
+            " || (!(compare_result" <<
+                      " || " << compare(k.var<value_type>("new"),
+                                        k.var<value_type>("old")) << ") "
+                  "&& gid < old_index)){\n" <<
+        "#else\n" <<
+        // while condition explained for minimum case with less (<)
+        // as comparison function:
+        // while(new_value < old_value
+        //       OR (new_value == old_value AND new_index < old_index))
+        "while(" <<
+            "(compare_result = " << compare(k.var<value_type>("new"),
+                                            k.var<value_type>("old"))  << ")" <<
+            " || (!(compare_result" <<
+                      " || " << compare(k.var<value_type>("old"),
+                                        k.var<value_type>("new")) << ") "
+                  "&& gid < old_index)){\n" <<
+        "#endif\n" <<
+
         "  if(" << atomic_cmpxchg_uint(k.var<uint_ *>("index"),
                                        k.var<uint_>("old_index"),
                                        k.var<uint_>("gid")) << " == old_index)\n" <<
         "      break;\n" <<
         "  else\n" <<
         "    old_index = *index;\n" <<
+        "old = " << first[k.var<uint_>("old_index")] << ";\n" <<
         "}\n";
 
     size_t index_arg_index = k.add_arg<uint_ *>(memory_object::global_memory, "index");
 
-    kernel kernel = k.compile(context);
+    std::string options;
+    if(!find_minimum){
+        options = "-DBOOST_COMPUTE_FIND_MAXIMUM";
+    }
+    kernel kernel = k.compile(context, options);
 
     // setup index buffer
     scalar<uint_> index(context);

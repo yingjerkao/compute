@@ -5,11 +5,12 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #include <algorithm>
 #include <cstdlib>
+#include <iostream>
 
 #include <thrust/copy.h>
 #include <thrust/device_vector.h>

@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #define BOOST_TEST_MODULE TestProgram
@@ -21,6 +21,7 @@
 #include <boost/compute/program.hpp>
 #include <boost/compute/utility/source.hpp>
 
+#include "quirks.hpp"
 #include "context_setup.hpp"
 
 namespace compute = boost::compute;
@@ -53,6 +54,31 @@ BOOST_AUTO_TEST_CASE(program_source)
         boost::compute::program::create_with_source(source, context);
 
     BOOST_CHECK_EQUAL(std::string(source), program.source());
+}
+
+BOOST_AUTO_TEST_CASE(program_multiple_sources)
+{
+    std::vector<std::string> sources;
+    sources.push_back("__kernel void foo(__global int* x) { }\n");
+    sources.push_back("__kernel void bar(__global float* y) { }\n");
+
+    // create program from sources
+    boost::compute::program program =
+        boost::compute::program::create_with_source(sources, context);
+    program.build();
+
+    boost::compute::kernel foo = program.create_kernel("foo");
+    boost::compute::kernel bar = program.create_kernel("bar");
+}
+
+BOOST_AUTO_TEST_CASE(program_source_no_file)
+{
+    // create program from a non-existant source file
+    // and verifies it throws.
+    BOOST_CHECK_THROW(boost::compute::program program =
+                      boost::compute::program::create_with_source_file
+                      (std::string(), context),
+                      std::ios_base::failure);
 }
 
 BOOST_AUTO_TEST_CASE(create_kernel)
@@ -117,6 +143,10 @@ BOOST_AUTO_TEST_CASE(compile_and_link)
 {
     REQUIRES_OPENCL_VERSION(1,2);
 
+    if(!supports_compile_program(device) || !supports_link_program(device)) {
+        return;
+    }
+
     // create the library program
     const char library_source[] = BOOST_COMPUTE_STRINGIZE_SOURCE(
         // for some reason the apple opencl compilers complains if a prototype
@@ -178,7 +208,7 @@ BOOST_AUTO_TEST_CASE(build_log)
         // should not get here
         BOOST_CHECK(false);
     }
-    catch(compute::opencl_error &e){
+    catch(compute::opencl_error&){
         std::string log = invalid_program.build_log();
         BOOST_CHECK(!log.empty());
     }

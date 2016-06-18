@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #define BOOST_TEST_MODULE TestImage2D
@@ -42,8 +42,8 @@ boost::compute::image2d img(context, 640, 480, rgba8);
         // verify image has been created and format is correct
         BOOST_CHECK(img.get() != cl_mem());
         BOOST_CHECK(img.format() == rgba8);
-        BOOST_CHECK_EQUAL(img.width(), 640);
-        BOOST_CHECK_EQUAL(img.height(), 480);
+        BOOST_CHECK_EQUAL(img.width(), size_t(640));
+        BOOST_CHECK_EQUAL(img.height(), size_t(480));
     }
     catch(compute::opencl_error &e){
         if(e.error_code() == CL_IMAGE_FORMAT_NOT_SUPPORTED){
@@ -123,6 +123,8 @@ BOOST_AUTO_TEST_CASE(clone_image)
 #ifdef CL_VERSION_1_2
 BOOST_AUTO_TEST_CASE(fill_image)
 {
+    REQUIRES_OPENCL_VERSION(1, 2); // device OpenCL version check
+
     compute::image_format format(CL_RGBA, CL_UNSIGNED_INT8);
 
     if(!compute::image2d::is_supported_format(format, context)){
@@ -159,6 +161,66 @@ BOOST_AUTO_TEST_CASE(image2d_type_name)
             boost::compute::type_name<boost::compute::image2d>(), "image2d_t"
         ) == 0
     );
+}
+
+BOOST_AUTO_TEST_CASE(map_image)
+{
+    compute::image_format format(CL_RGBA, CL_UNSIGNED_INT8);
+
+    if(!compute::image2d::is_supported_format(format, context)){
+        std::cerr << "skipping clone_image test, image format not supported" << std::endl;
+        return;
+    }
+
+    // create image on the device
+    compute::image2d image(context, 2, 2, format);
+
+    // ensure we have a valid image object
+    BOOST_REQUIRE(image.get() != cl_mem());
+
+    size_t row_pitch = 0;
+    size_t slice_pitch = 0;
+
+    // write map image
+    compute::uint_* ptr = static_cast<compute::uint_*>(
+        queue.enqueue_map_image(image, CL_MAP_WRITE, image.origin(),
+                                image.size(), row_pitch, slice_pitch)
+    );
+
+    BOOST_CHECK_EQUAL(row_pitch, size_t(2*4));
+
+    // image data
+    compute::uint_ data[] = { 0x0000ffff, 0xff00ffff,
+                              0x00ff00ff, 0xffffffff };
+
+    // copy data to image
+    for(size_t i = 0; i < 4; i++){
+        *(ptr+i) = data[i];
+    }
+
+    // unmap
+    queue.enqueue_unmap_image(image, static_cast<void*>(ptr));
+
+    // read map image
+    compute::event map_event;
+    ptr = static_cast<compute::uint_*>(
+        queue.enqueue_map_image_async(image, CL_MAP_READ, image.origin(),
+                                      image.size(), row_pitch, slice_pitch,
+                                      map_event)
+    );
+
+    map_event.wait();
+
+    BOOST_CHECK(map_event.get_status() == CL_COMPLETE);
+    BOOST_CHECK_EQUAL(row_pitch, size_t(2*4));
+
+    // checking
+    for(size_t i = 0; i < 4; i++){
+        BOOST_CHECK_EQUAL(*(ptr+i), data[i]);
+    }
+
+    // unmap
+    queue.enqueue_unmap_image(image, static_cast<void*>(ptr));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

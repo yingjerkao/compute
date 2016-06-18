@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #ifndef BOOST_COMPUTE_TYPES_STRUCT_HPP
@@ -15,9 +15,10 @@
 
 #include <boost/static_assert.hpp>
 
+#include <boost/preprocessor/expr_if.hpp>
 #include <boost/preprocessor/stringize.hpp>
-#include <boost/preprocessor/seq/for_each.hpp>
 #include <boost/preprocessor/seq/fold_left.hpp>
+#include <boost/preprocessor/seq/for_each.hpp>
 #include <boost/preprocessor/seq/transform.hpp>
 
 #include <boost/compute/type_traits/type_definition.hpp>
@@ -34,6 +35,15 @@ inline std::string adapt_struct_insert_member(T Struct::*, const char *name)
 {
     std::stringstream s;
     s << "    " << type_name<T>() << " " << name << ";\n";
+    return s.str();
+}
+
+
+template<class Struct, class T, int N>
+inline std::string adapt_struct_insert_member(T (Struct::*)[N], const char *name)
+{
+    std::stringstream s;
+    s << "    " << type_name<T>() << " " << name << "[" << N << "]" << ";\n";
     return s.str();
 }
 

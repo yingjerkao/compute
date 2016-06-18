@@ -1,3 +1,11 @@
+[/===========================================================================
+ Copyright (c) 2013-2015 Kyle Lutz <kyle.r.lutz@gmail.com>
+
+ Distributed under the Boost Software License, Version 1.0
+ See accompanying file LICENSE_1_0.txt or copy at
+ http://www.boost.org/LICENSE_1_0.txt
+=============================================================================/]
+
 [section:platforms_and_compilers Platforms and Compilers]
 
 Boost.Compute has been tested on the following:
@@ -28,13 +36,14 @@ To explicitly enable variadic support for Boost.Preprocessor add
 
 * NVIDIA (NVIDIA GPUs only)
 * AMD (CPUs and AMD GPUs)
-* Intel (CPUs only)
+* Intel (CPUs and Intel GPUs)
 * POCL (CPUs only)
 * Beignet (Intel GPUs only)
+* Apple (CPUs and GPUs)
 
 [endsect]
 
 If you have an additional platform you would like to see supported please
-[@https://github.com/kylelutz/compute/issues/new submit] a bug-report.
+[@https://github.com/boostorg/compute/issues/new submit] a bug-report.
 
 [endsect]

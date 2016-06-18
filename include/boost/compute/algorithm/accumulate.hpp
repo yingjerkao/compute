@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #ifndef BOOST_COMPUTE_ALGORITHM_ACCUMULATE_HPP
@@ -85,13 +85,13 @@ BOOST_PP_SEQ_FOR_EACH(
 template<class T>
 inline bool can_accumulate_with_reduce(T init, min<T>)
 {
-    return init == std::numeric_limits<T>::max();
+    return init == (std::numeric_limits<T>::max)();
 }
 
 template<class T>
 inline bool can_accumulate_with_reduce(T init, max<T>)
 {
-    return init == std::numeric_limits<T>::min();
+    return init == (std::numeric_limits<T>::min)();
 }
 
 #undef BOOST_COMPUTE_DETAIL_DECLARE_CAN_ACCUMULATE_WITH_REDUCE

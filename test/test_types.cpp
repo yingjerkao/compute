@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #define BOOST_TEST_MODULE TestTypes
@@ -25,6 +25,15 @@ BOOST_AUTO_TEST_CASE(vector_ctor)
     BOOST_CHECK_EQUAL(i4[1], 2);
     BOOST_CHECK_EQUAL(i4[2], 3);
     BOOST_CHECK_EQUAL(i4[3], 4);
+
+    i4 = boost::compute::int4_(1);
+    BOOST_CHECK(i4 == boost::compute::int4_(1, 1, 1, 1));
+    BOOST_CHECK(i4 == (boost::compute::vector_type<int, size_t(4)>(1)));
+    BOOST_CHECK_EQUAL(i4, boost::compute::int4_(1, 1, 1, 1));
+    BOOST_CHECK_EQUAL(i4[0], 1);
+    BOOST_CHECK_EQUAL(i4[1], 1);
+    BOOST_CHECK_EQUAL(i4[2], 1);
+    BOOST_CHECK_EQUAL(i4[3], 1);
 }
 
 BOOST_AUTO_TEST_CASE(vector_string)

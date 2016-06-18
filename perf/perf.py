@@ -1,5 +1,12 @@
 #!/usr/bin/python
 
+# Copyright (c) 2014 Kyle Lutz <kyle.r.lutz@gmail.com>
+# Distributed under the Boost Software License, Version 1.0
+# See accompanying file LICENSE_1_0.txt or copy at
+# http://www.boost.org/LICENSE_1_0.txt
+#
+# See http://boostorg.github.com/compute for more information.
+
 # driver script for boost.compute benchmarking. will run a
 # benchmark for a given function (e.g. accumulate, sort).
 
@@ -118,15 +125,31 @@ def run_benchmark(name, sizes, vs=[]):
             "accumulate",
             "count",
             "exclusive_scan",
+            "find",
             "inner_product",
             "merge",
             "partial_sum",
             "partition",
+            "reduce_by_key",
             "reverse",
+            "reverse_copy",
             "rotate",
             "saxpy",
             "sort",
             "unique"
+        ],
+        "bolt" : [
+            "accumulate",
+            "count",
+            "exclusive_scan",
+            "fill",
+            "inner_product",
+            "max_element",
+            "merge",
+            "partial_sum",
+            "reduce_by_key",
+            "saxpy",
+            "sort"
         ],
         "tbb": [
             "accumulate",
@@ -136,6 +159,7 @@ def run_benchmark(name, sizes, vs=[]):
         "stl": [
             "accumulate",
             "count",
+            "find",
             "find_end",
             "includes",
             "inner_product",
@@ -149,6 +173,7 @@ def run_benchmark(name, sizes, vs=[]):
             "partition_point",
             "prev_permutation",
             "reverse",
+            "reverse_copy",
             "rotate",
             "rotate_copy",
             "saxpy",
@@ -187,7 +212,7 @@ if __name__ == '__main__':
 
     sizes = sorted(sizes)
 
-    competitors = ["tbb", "thrust", "stl"]
+    competitors = ["bolt", "tbb", "thrust", "stl"]
 
     report = run_benchmark(test, sizes, competitors)
 

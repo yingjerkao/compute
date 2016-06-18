@@ -1,26 +1,19 @@
+[/===========================================================================
+ Copyright (c) 2013-2015 Kyle Lutz <kyle.r.lutz@gmail.com>
+
+ Distributed under the Boost Software License, Version 1.0
+ See accompanying file LICENSE_1_0.txt or copy at
+ http://www.boost.org/LICENSE_1_0.txt
+=============================================================================/]
+
 [section:getting_started Getting Started]
 
-[section Downloading]
+[section Installation]
 
-Boost.Compute is not yet an offical Boost library and therefore is not
-packaged with the standard Boost distribution. To download the library use the
-following command:
+Boost.Compute is available in Boost starting with version 1.61. Visit
+[@http://www.boost.org/users/download/] for download instructions.
 
 [endsect]
-
-``
-git clone git://github.com/kylelutz/compute.git
-``
-
-Ubuntu users can install Boost.Compute from the PPA:
-
-``
-# add the boost.compute ppa
-sudo add-apt-repository ppa:kylelutz/compute
-
-# update and install boost-compute
-sudo apt-get update && sudo apt-get install boost-compute
-``
 
 [section Compilation and Usage]
 
@@ -91,32 +84,10 @@ with the following macros.
 
 [endsect]
 
-[section Installation]
-
-Boost.Compute can also be installed system-wide. After compiling, run the
-following command to install the Boost.Compute headers. By default, they will
-be installed under `/usr/local/include`.
-
-[pre
-make install
-]
-
-After installing, Boost.Compute can be used through cmake by adding the following
-to your `CMakeLists.txt`:
-
-[pre
-find_package(BoostCompute REQUIRED)
-include_directories(${BoostCompute_INCLUDE_DIRS})
-]
-
-Ensure you also find and setup the OpenCL libraries for your system.
-
-[endsect] [/ installation]
-
 [section Support]
 
 Bugs and issues can be reported to the
-[@https://github.com/kylelutz/compute/issues?state=open issue tracker].
+[@https://github.com/boostorg/compute/issues?state=open issue tracker].
 
 There is also a mailing list for users and developers at
 [@https://groups.google.com/forum/#!forum/boost-compute].

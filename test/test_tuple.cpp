@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #define BOOST_TEST_MODULE TestTuple
@@ -32,20 +32,20 @@ namespace compute = boost::compute;
 
 BOOST_AUTO_TEST_CASE(vector_tuple_int_float)
 {
-    boost::compute::vector<boost::tuple<int, float> > vector;
+    boost::compute::vector<boost::tuple<int, float> > vector(context);
 
-    vector.push_back(boost::make_tuple(1, 2.1f));
-    vector.push_back(boost::make_tuple(2, 3.2f));
-    vector.push_back(boost::make_tuple(3, 4.3f));
+    vector.push_back(boost::make_tuple(1, 2.1f), queue);
+    vector.push_back(boost::make_tuple(2, 3.2f), queue);
+    vector.push_back(boost::make_tuple(3, 4.3f), queue);
 }
 
 BOOST_AUTO_TEST_CASE(copy_vector_tuple)
 {
     // create vector of tuples on device
     boost::compute::vector<boost::tuple<char, int, float> > input(context);
-    input.push_back(boost::make_tuple('a', 1, 2.3f));
-    input.push_back(boost::make_tuple('c', 3, 4.5f));
-    input.push_back(boost::make_tuple('f', 6, 7.8f));
+    input.push_back(boost::make_tuple('a', 1, 2.3f), queue);
+    input.push_back(boost::make_tuple('c', 3, 4.5f), queue);
+    input.push_back(boost::make_tuple('f', 6, 7.8f), queue);
 
     // copy on device
     boost::compute::vector<boost::tuple<char, int, float> > output(context);
@@ -53,7 +53,8 @@ BOOST_AUTO_TEST_CASE(copy_vector_tuple)
     boost::compute::copy(
         input.begin(),
         input.end(),
-        output.begin()
+        output.begin(),
+        queue
     );
 
     // copy to host
@@ -62,7 +63,8 @@ BOOST_AUTO_TEST_CASE(copy_vector_tuple)
     boost::compute::copy(
         input.begin(),
         input.end(),
-        host_output.begin()
+        host_output.begin(),
+        queue
     );
 
     // check tuple data
@@ -74,9 +76,9 @@ BOOST_AUTO_TEST_CASE(copy_vector_tuple)
 BOOST_AUTO_TEST_CASE(extract_tuple_elements)
 {
     compute::vector<boost::tuple<char, int, float> > vector(context);
-    vector.push_back(boost::make_tuple('a', 1, 2.3f));
-    vector.push_back(boost::make_tuple('c', 3, 4.5f));
-    vector.push_back(boost::make_tuple('f', 6, 7.8f));
+    vector.push_back(boost::make_tuple('a', 1, 2.3f), queue);
+    vector.push_back(boost::make_tuple('c', 3, 4.5f), queue);
+    vector.push_back(boost::make_tuple('f', 6, 7.8f), queue);
 
     compute::vector<char> chars(3, context);
     compute::transform(
@@ -105,10 +107,10 @@ BOOST_AUTO_TEST_CASE(fill_tuple_vector)
     }
 
     compute::vector<boost::tuple<char, int, float> > vector(5, context);
-    compute::fill(vector.begin(), vector.end(), boost::make_tuple('z', 4, 3.14f));
+    compute::fill(vector.begin(), vector.end(), boost::make_tuple('z', 4, 3.14f), queue);
 
     std::vector<boost::tuple<char, int, float> > host_output(5);
-    compute::copy(vector.begin(), vector.end(), host_output.begin());
+    compute::copy(vector.begin(), vector.end(), host_output.begin(), queue);
     BOOST_CHECK_EQUAL(host_output[0], boost::make_tuple('z', 4, 3.14f));
     BOOST_CHECK_EQUAL(host_output[1], boost::make_tuple('z', 4, 3.14f));
     BOOST_CHECK_EQUAL(host_output[2], boost::make_tuple('z', 4, 3.14f));
@@ -116,7 +118,7 @@ BOOST_AUTO_TEST_CASE(fill_tuple_vector)
     BOOST_CHECK_EQUAL(host_output[4], boost::make_tuple('z', 4, 3.14f));
 }
 
-#ifndef BOOST_COMPUTE_DETAIL_NO_VARIADIC_TEMPLATES
+#ifndef BOOST_COMPUTE_NO_VARIADIC_TEMPLATES
 BOOST_AUTO_TEST_CASE(variadic_tuple)
 {
     BOOST_CHECK_EQUAL(
@@ -124,9 +126,9 @@ BOOST_AUTO_TEST_CASE(variadic_tuple)
         "boost_tuple_char_short_int_float_t"
     );
 }
-#endif // BOOST_COMPUTE_DETAIL_NO_VARIADIC_TEMPLATES
+#endif // BOOST_COMPUTE_NO_VARIADIC_TEMPLATES
 
-#ifndef BOOST_COMPUTE_DETAIL_NO_STD_TUPLE
+#ifndef BOOST_COMPUTE_NO_STD_TUPLE
 BOOST_AUTO_TEST_CASE(std_tuple)
 {
     BOOST_CHECK_EQUAL(
@@ -134,6 +136,6 @@ BOOST_AUTO_TEST_CASE(std_tuple)
         "std_tuple_char_short_int_float_t"
     );
 }
-#endif // BOOST_COMPUTE_DETAIL_NO_STD_TUPLE
+#endif // BOOST_COMPUTE_NO_STD_TUPLE
 
 BOOST_AUTO_TEST_SUITE_END()

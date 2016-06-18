@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #ifndef BOOST_COMPUTE_RANDOM_HPP
@@ -20,6 +20,7 @@
 #include <boost/compute/random/discrete_distribution.hpp>
 #include <boost/compute/random/linear_congruential_engine.hpp>
 #include <boost/compute/random/mersenne_twister_engine.hpp>
+#include <boost/compute/random/threefry_engine.hpp>
 #include <boost/compute/random/normal_distribution.hpp>
 #include <boost/compute/random/uniform_int_distribution.hpp>
 #include <boost/compute/random/uniform_real_distribution.hpp>

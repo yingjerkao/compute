@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #define BOOST_TEST_MODULE TestContext
@@ -14,11 +14,13 @@
 #include <boost/compute/system.hpp>
 #include <boost/compute/context.hpp>
 
+#include "check_macros.hpp"
+#include "context_setup.hpp"
+
 namespace compute = boost::compute;
 
 BOOST_AUTO_TEST_CASE(construct_from_cl_context)
 {
-    boost::compute::device device = boost::compute::system::default_device();
     cl_device_id id = device.id();
 
     // create cl_context
@@ -61,3 +63,5 @@ BOOST_AUTO_TEST_CASE(multiple_devices)
         BOOST_CHECK_EQUAL(ctx.get_devices().size(), platform.device_count());
     }
 }
+
+BOOST_AUTO_TEST_SUITE_END()

@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #ifndef BOOST_COMPUTE_UTILITY_HPP
@@ -13,6 +13,7 @@
 
 #include <boost/compute/utility/dim.hpp>
 #include <boost/compute/utility/extents.hpp>
+#include <boost/compute/utility/invoke.hpp>
 #include <boost/compute/utility/program_cache.hpp>
 #include <boost/compute/utility/source.hpp>
 #include <boost/compute/utility/wait_list.hpp>

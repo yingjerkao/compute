@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #define BOOST_TEST_MODULE TestTransform
@@ -296,6 +296,29 @@ boost::compute::transform(
 //! [transform_abs]
 
     CHECK_RANGE_EQUAL(int, 4, vec, (1, 2, 3, 4));
+}
+
+BOOST_AUTO_TEST_CASE(abs_if_odd)
+{
+    // return absolute value only for odd values
+    BOOST_COMPUTE_FUNCTION(int, abs_if_odd, (int x),
+    {
+        if(x & 1){
+            return abs(x);
+        }
+        else {
+            return x;
+        }
+    });
+
+    int data[] = { -2, -3, -4, -5, -6, -7, -8, -9 };
+    compute::vector<int> vector(data, data + 8, queue);
+
+    compute::transform(
+        vector.begin(), vector.end(), vector.begin(), abs_if_odd, queue
+    );
+
+    CHECK_RANGE_EQUAL(int, 8, vector, (-2, +3, -4, +5, -6, +7, -8, +9));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -1,6 +1,15 @@
+# ---------------------------------------------------------------------------
+#  Copyright (c) 2013 Kyle Lutz <kyle.r.lutz@gmail.com>
+#
+#  Distributed under the Boost Software License, Version 1.0
+#  See accompanying file LICENSE_1_0.txt or copy at
+#  http://www.boost.org/LICENSE_1_0.txt
+#
+# ---------------------------------------------------------------------------
+
 include_directories(../include)
 
-set(PERF_BOOST_COMPONENTS system timer chrono)
+set(PERF_BOOST_COMPONENTS system timer chrono program_options)
 
 if (${BOOST_COMPUTE_USE_OFFLINE_CACHE})
   set(PERF_BOOST_COMPONENTS ${PERF_BOOST_COMPONENTS} filesystem)
@@ -8,9 +17,18 @@ endif()
 
 if(${BOOST_COMPUTE_THREAD_SAFE} AND NOT ${BOOST_COMPUTE_USE_CPP11})
   set(PERF_BOOST_COMPONENTS ${PERF_BOOST_COMPONENTS} thread)
+elseif(${BOOST_COMPUTE_HAVE_BOLT} AND ${BOOST_COMPUTE_USE_CPP11})
+  set(PERF_BOOST_COMPONENTS ${PERF_BOOST_COMPONENTS} thread)
 endif()
 
-find_package(Boost 1.48 REQUIRED COMPONENTS ${PERF_BOOST_COMPONENTS})
+if(${BOOST_COMPUTE_HAVE_BOLT} AND ${BOOST_COMPUTE_USE_CPP11})
+  set(PERF_BOOST_COMPONENTS ${PERF_BOOST_COMPONENTS} date_time)
+endif()
+
+if(PERF_BOOST_COMPONENTS)
+  list(REMOVE_DUPLICATES PERF_BOOST_COMPONENTS)
+endif()
+find_package(Boost 1.54 REQUIRED COMPONENTS ${PERF_BOOST_COMPONENTS})
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 
 set(BENCHMARKS
@@ -25,15 +43,14 @@ set(BENCHMARKS
   erase_remove
   exclusive_scan
   fill
+  find
   find_end
   includes
   inner_product
   is_permutation
   is_sorted
-  linear_congruential_engine
   max_element
   merge
-  mersenne_twister
   next_permutation
   nth_element
   partial_sum
@@ -41,9 +58,12 @@ set(BENCHMARKS
   partition_point
   prev_permutation
   reverse
+  reverse_copy
   rotate
   rotate_copy
   host_sort
+  random_number_engine
+  reduce_by_key
   saxpy
   search
   search_n
@@ -63,13 +83,14 @@ set(BENCHMARKS
 foreach(BENCHMARK ${BENCHMARKS})
   set(PERF_TARGET perf_${BENCHMARK})
   add_executable(${PERF_TARGET} perf_${BENCHMARK}.cpp)
-  target_link_libraries(${PERF_TARGET} ${OPENCL_LIBRARIES} ${Boost_LIBRARIES})
+  target_link_libraries(${PERF_TARGET} ${OpenCL_LIBRARIES} ${Boost_LIBRARIES})
 endforeach()
 
 # stl benchmarks (for comparison)
 set(STL_BENCHMARKS
   stl_accumulate
   stl_count
+  stl_find
   stl_find_end
   stl_includes
   stl_inner_product
@@ -80,6 +101,7 @@ set(STL_BENCHMARKS
   stl_partition
   stl_prev_permutation
   stl_reverse
+  stl_reverse_copy
   stl_rotate
   stl_rotate_copy
   stl_saxpy
@@ -95,7 +117,7 @@ set(STL_BENCHMARKS
   stl_unique_copy
 )
 
-# stl benchmarks which rerquire c++11
+# stl benchmarks which require c++11
 if(${BOOST_COMPUTE_USE_CPP11})
   list(APPEND
     STL_BENCHMARKS
@@ -118,11 +140,14 @@ if(${BOOST_COMPUTE_HAVE_CUDA})
     thrust_accumulate
     thrust_count
     thrust_exclusive_scan
+    thrust_find
     thrust_inner_product
     thrust_merge
     thrust_partial_sum
     thrust_partition
+    thrust_reduce_by_key
     thrust_reverse
+    thrust_reverse_copy
     thrust_rotate
     thrust_saxpy
     thrust_set_difference
@@ -153,4 +178,32 @@ if(${BOOST_COMPUTE_HAVE_TBB})
     add_executable(${PERF_TARGET} perf_${BENCHMARK}.cpp)
     target_link_libraries(${PERF_TARGET} ${TBB_LIBRARIES} ${Boost_LIBRARIES})
   endforeach()
+endif()
+
+# bolt c++ template lib benchmarks (for comparison)
+if(${BOOST_COMPUTE_HAVE_BOLT} AND ${BOOST_COMPUTE_USE_CPP11})
+  find_package(Bolt REQUIRED)
+  include_directories(SYSTEM ${BOLT_INCLUDE_DIRS})
+
+  set(BOLT_BENCHMARKS
+    bolt_accumulate
+    bolt_count
+    bolt_exclusive_scan
+    bolt_fill
+    bolt_inner_product
+    bolt_max_element
+    bolt_merge
+    bolt_partial_sum
+    bolt_reduce_by_key
+    bolt_saxpy
+    bolt_sort
+  )
+
+  foreach(BENCHMARK ${BOLT_BENCHMARKS})
+    set(PERF_TARGET perf_${BENCHMARK})
+    add_executable(${PERF_TARGET} perf_${BENCHMARK}.cpp)
+    target_link_libraries(${PERF_TARGET} ${OpenCL_LIBRARIES} ${BOLT_LIBRARIES} ${Boost_LIBRARIES})
+  endforeach()
+elseif(${BOOST_COMPUTE_HAVE_BOLT} AND NOT ${BOOST_COMPUTE_USE_CPP11})
+  message(WARNING "BOOST_COMPUTE_USE_CPP11 must be ON for building Bolt C++ Template Library performance tests.")
 endif()

@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #ifndef PERF_HPP
@@ -22,7 +22,7 @@
 #include <boost/timer/timer.hpp>
 
 static size_t PERF_N = 1024;
-static size_t PERF_TRIALS = 1;
+static size_t PERF_TRIALS = 3;
 
 // parses command line arguments and sets the corresponding perf variables
 inline void perf_parse_args(int argc, char *argv[])
@@ -31,8 +31,9 @@ inline void perf_parse_args(int argc, char *argv[])
         PERF_N = boost::lexical_cast<size_t>(argv[1]);
     }
 
-    // TODO: make this configurable from the command line
-    PERF_TRIALS = 3;
+    if(argc >= 3){
+        PERF_TRIALS = boost::lexical_cast<size_t>(argv[2]);
+    }
 }
 
 // generates a vector of random numbers
@@ -94,5 +95,15 @@ public:
     boost::timer::cpu_timer timer;
     std::vector<boost::timer::nanosecond_type> times;
 };
+
+// returns the rate (in MB/s) for processing 'count' items of type 'T'
+// in 'time' nanoseconds
+template<class T>
+double perf_rate(const size_t count, perf_timer::nanosecond_type time)
+{
+    const size_t byte_count = count * sizeof(T);
+
+    return (double(byte_count) / 1024 / 1024) / (time / 1e9);
+}
 
 #endif // PERF_HPP

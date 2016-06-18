@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #define BOOST_TEST_MODULE TestPinnedAllocator
@@ -20,8 +20,8 @@ namespace compute = boost::compute;
 
 BOOST_AUTO_TEST_CASE(vector_with_pinned_allocator)
 {
-    compute::vector<int, compute::pinned_allocator<int> > vector;
-    vector.push_back(12);
+    compute::vector<int, compute::pinned_allocator<int> > vector(context);
+    vector.push_back(12, queue);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #ifndef BOOST_COMPUTE_KERNEL_HPP
@@ -22,7 +22,6 @@
 #include <boost/compute/type_traits/is_fundamental.hpp>
 #include <boost/compute/detail/get_object_info.hpp>
 #include <boost/compute/detail/assert_cl_success.hpp>
-#include <boost/compute/memory/svm_ptr.hpp>
 
 namespace boost {
 namespace compute {
@@ -191,13 +190,18 @@ public:
     {
         return detail::get_object_info<T>(clGetKernelArgInfo, m_kernel, info, index);
     }
+
+    /// \overload
+    template<int Enum>
+    typename detail::get_object_info_type<kernel, Enum>::type
+    get_arg_info(size_t index) const;
     #endif // CL_VERSION_1_2
 
     /// Returns work-group information for the kernel with \p device.
     ///
     /// \see_opencl_ref{clGetKernelWorkGroupInfo}
     template<class T>
-    T get_work_group_info(const device &device, cl_kernel_work_group_info info)
+    T get_work_group_info(const device &device, cl_kernel_work_group_info info) const
     {
         return detail::get_object_info<T>(clGetKernelWorkGroupInfo, m_kernel, info, device.id());
     }
@@ -258,11 +262,10 @@ public:
     }
 
     /// \internal_
-    template<class T>
-    void set_arg(size_t index, const svm_ptr<T> ptr)
+    void set_arg_svm_ptr(size_t index, void* ptr)
     {
         #ifdef CL_VERSION_2_0
-        cl_int ret = clSetKernelArgSVMPointer(m_kernel, index, ptr.get());
+        cl_int ret = clSetKernelArgSVMPointer(m_kernel, index, ptr);
         if(ret != CL_SUCCESS){
             BOOST_THROW_EXCEPTION(opencl_error(ret));
         }
@@ -271,7 +274,7 @@ public:
         #endif
     }
 
-    #ifndef BOOST_NO_VARIADIC_TEMPLATES
+    #ifndef BOOST_COMPUTE_NO_VARIADIC_TEMPLATES
     /// Sets the arguments for the kernel to \p args.
     template<class... T>
     void set_args(T&&... args)
@@ -280,7 +283,7 @@ public:
 
         _set_args<0>(args...);
     }
-    #endif // BOOST_NO_VARIADIC_TEMPLATES
+    #endif // BOOST_COMPUTE_NO_VARIADIC_TEMPLATES
 
     #if defined(CL_VERSION_2_0) || defined(BOOST_COMPUTE_DOXYGEN_INVOKED)
     /// Sets additional execution information for the kernel.
@@ -324,7 +327,7 @@ public:
     }
 
 private:
-    #ifndef BOOST_NO_VARIADIC_TEMPLATES
+    #ifndef BOOST_COMPUTE_NO_VARIADIC_TEMPLATES
     /// \internal_
     template<size_t N>
     void _set_args()
@@ -338,7 +341,7 @@ private:
         set_arg(N, arg);
         _set_args<N+1>(rest...);
     }
-    #endif // BOOST_NO_VARIADIC_TEMPLATES
+    #endif // BOOST_COMPUTE_NO_VARIADIC_TEMPLATES
 
 private:
     cl_kernel m_kernel;
@@ -362,6 +365,23 @@ BOOST_COMPUTE_DETAIL_DEFINE_GET_INFO_SPECIALIZATIONS(kernel,
 BOOST_COMPUTE_DETAIL_DEFINE_GET_INFO_SPECIALIZATIONS(kernel,
     ((std::string, CL_KERNEL_ATTRIBUTES))
 )
+#endif // CL_VERSION_1_2
+
+/// \internal_ define get_arg_info() specializations for kernel
+#ifdef CL_VERSION_1_2
+#define BOOST_COMPUTE_DETAIL_DEFINE_KERNEL_GET_ARG_INFO_SPECIALIZATION(result_type, value) \
+    namespace detail { \
+        template<> struct get_object_info_type<kernel, value> { typedef result_type type; }; \
+    } \
+    template<> inline result_type kernel::get_arg_info<value>(size_t index) const { \
+        return get_arg_info<result_type>(index, value); \
+    }
+
+BOOST_COMPUTE_DETAIL_DEFINE_KERNEL_GET_ARG_INFO_SPECIALIZATION(cl_kernel_arg_address_qualifier, CL_KERNEL_ARG_ADDRESS_QUALIFIER)
+BOOST_COMPUTE_DETAIL_DEFINE_KERNEL_GET_ARG_INFO_SPECIALIZATION(cl_kernel_arg_access_qualifier, CL_KERNEL_ARG_ACCESS_QUALIFIER)
+BOOST_COMPUTE_DETAIL_DEFINE_KERNEL_GET_ARG_INFO_SPECIALIZATION(std::string, CL_KERNEL_ARG_TYPE_NAME)
+BOOST_COMPUTE_DETAIL_DEFINE_KERNEL_GET_ARG_INFO_SPECIALIZATION(cl_kernel_arg_type_qualifier, CL_KERNEL_ARG_TYPE_QUALIFIER)
+BOOST_COMPUTE_DETAIL_DEFINE_KERNEL_GET_ARG_INFO_SPECIALIZATION(std::string, CL_KERNEL_ARG_NAME)
 #endif // CL_VERSION_1_2
 
 namespace detail {

@@ -1,3 +1,12 @@
+# ---------------------------------------------------------------------------
+#  Copyright (c) 2013 Kyle Lutz <kyle.r.lutz@gmail.com>
+#
+#  Distributed under the Boost Software License, Version 1.0
+#  See accompanying file LICENSE_1_0.txt or copy at
+#  http://www.boost.org/LICENSE_1_0.txt
+#
+# ---------------------------------------------------------------------------
+
 include_directories(../include)
 
 set(BOOST_COMPONENTS unit_test_framework)
@@ -13,11 +22,25 @@ if (${BOOST_COMPUTE_USE_OFFLINE_CACHE})
 endif()
 
 if(${BOOST_COMPUTE_THREAD_SAFE} AND NOT ${BOOST_COMPUTE_USE_CPP11})
-  set(BOOST_COMPONENTS ${BOOST_COMPONENTS} thread)
+  set(BOOST_COMPONENTS ${BOOST_COMPONENTS} system thread)
 endif()
 
-find_package(Boost 1.48 REQUIRED COMPONENTS ${BOOST_COMPONENTS})
-add_definitions(-DBOOST_TEST_DYN_LINK)
+if(MSVC AND BOOST_COMPONENTS)
+  set(BOOST_COMPONENTS ${BOOST_COMPONENTS} chrono)
+endif()
+
+if(BOOST_COMPONENTS)
+  list(REMOVE_DUPLICATES BOOST_COMPONENTS)
+endif()
+find_package(Boost 1.54 REQUIRED COMPONENTS ${BOOST_COMPONENTS})
+
+if(NOT MSVC)
+  add_definitions(-DBOOST_TEST_DYN_LINK)
+else()
+  if(MSVC AND ${BOOST_COMPUTE_BOOST_ALL_DYN_LINK})
+      add_definitions(-DBOOST_TEST_DYN_LINK)
+  endif()
+endif()
 
 # enable automatic kernel compilation error messages for tests
 add_definitions(-DBOOST_COMPUTE_DEBUG_KERNEL_COMPILATION)
@@ -31,7 +54,7 @@ function(add_compute_test TEST_NAME TEST_SOURCE)
   get_filename_component(TEST_TARGET ${TEST_SOURCE} NAME_WE)
   add_executable(${TEST_TARGET} ${TEST_SOURCE})
   target_link_libraries(${TEST_TARGET}
-    ${OPENCL_LIBRARIES}
+    ${OpenCL_LIBRARIES}
     ${Boost_LIBRARIES}
   )
 
@@ -59,6 +82,7 @@ add_compute_test("core.type_traits" test_type_traits.cpp)
 add_compute_test("core.user_event" test_user_event.cpp)
 
 add_compute_test("utility.extents" test_extents.cpp)
+add_compute_test("utility.invoke" test_invoke.cpp)
 add_compute_test("utility.program_cache" test_program_cache.cpp)
 add_compute_test("utility.wait_list" test_wait_list.cpp)
 
@@ -68,6 +92,7 @@ add_compute_test("algorithm.adjacent_find" test_adjacent_find.cpp)
 add_compute_test("algorithm.any_all_none_of" test_any_all_none_of.cpp)
 add_compute_test("algorithm.binary_search" test_binary_search.cpp)
 add_compute_test("algorithm.copy" test_copy.cpp)
+add_compute_test("algorithm.copy_type_mismatch" test_copy_type_mismatch.cpp)
 add_compute_test("algorithm.copy_if" test_copy_if.cpp)
 add_compute_test("algorithm.count" test_count.cpp)
 add_compute_test("algorithm.equal" test_equal.cpp)
@@ -96,9 +121,11 @@ add_compute_test("algorithm.partition" test_partition.cpp)
 add_compute_test("algorithm.partition_point" test_partition_point.cpp)
 add_compute_test("algorithm.prev_permutation" test_prev_permutation.cpp)
 add_compute_test("algorithm.radix_sort" test_radix_sort.cpp)
+add_compute_test("algorithm.radix_sort_by_key" test_radix_sort_by_key.cpp)
 add_compute_test("algorithm.random_fill" test_random_fill.cpp)
 add_compute_test("algorithm.random_shuffle" test_random_shuffle.cpp)
 add_compute_test("algorithm.reduce" test_reduce.cpp)
+add_compute_test("algorithm.reduce_by_key" test_reduce_by_key.cpp)
 add_compute_test("algorithm.remove" test_remove.cpp)
 add_compute_test("algorithm.replace" test_replace.cpp)
 add_compute_test("algorithm.reverse" test_reverse.cpp)
@@ -106,6 +133,7 @@ add_compute_test("algorithm.rotate" test_rotate.cpp)
 add_compute_test("algorithm.rotate_copy" test_rotate_copy.cpp)
 add_compute_test("algorithm.scan" test_scan.cpp)
 add_compute_test("algorithm.scatter" test_scatter.cpp)
+add_compute_test("algorithm.scatter_if" test_scatter_if.cpp)
 add_compute_test("algorithm.search" test_search.cpp)
 add_compute_test("algorithm.search_n" test_search_n.cpp)
 add_compute_test("algorithm.set_difference" test_set_difference.cpp)
@@ -116,7 +144,9 @@ add_compute_test("algorithm.sort" test_sort.cpp)
 add_compute_test("algorithm.sort_by_key" test_sort_by_key.cpp)
 add_compute_test("algorithm.stable_partition" test_stable_partition.cpp)
 add_compute_test("algorithm.stable_sort" test_stable_sort.cpp)
+add_compute_test("algorithm.stable_sort_by_key" test_stable_sort_by_key.cpp)
 add_compute_test("algorithm.transform" test_transform.cpp)
+add_compute_test("algorithm.transform_if" test_transform_if.cpp)
 add_compute_test("algorithm.transform_reduce" test_transform_reduce.cpp)
 add_compute_test("algorithm.unique" test_unique.cpp)
 add_compute_test("algorithm.unique_copy" test_unique_copy.cpp)
@@ -163,6 +193,7 @@ add_compute_test("iterator.counting_iterator" test_counting_iterator.cpp)
 add_compute_test("iterator.discard_iterator" test_discard_iterator.cpp)
 add_compute_test("iterator.function_input_iterator" test_function_input_iterator.cpp)
 add_compute_test("iterator.permutation_iterator" test_permutation_iterator.cpp)
+add_compute_test("iterator.strided_iterator" test_strided_iterator.cpp)
 add_compute_test("iterator.transform_iterator" test_transform_iterator.cpp)
 add_compute_test("iterator.zip_iterator" test_zip_iterator.cpp)
 
@@ -173,6 +204,7 @@ add_compute_test("random.bernoulli_distribution" test_bernoulli_distribution.cpp
 add_compute_test("random.discrete_distribution" test_discrete_distribution.cpp)
 add_compute_test("random.linear_congruential_engine" test_linear_congruential_engine.cpp)
 add_compute_test("random.mersenne_twister_engine" test_mersenne_twister_engine.cpp)
+add_compute_test("random.threefry_engine" test_threefry_engine.cpp)
 add_compute_test("random.normal_distribution" test_normal_distribution.cpp)
 add_compute_test("random.uniform_int_distribution" test_uniform_int_distribution.cpp)
 add_compute_test("random.uniform_real_distribution" test_uniform_real_distribution.cpp)
@@ -189,12 +221,12 @@ add_compute_test("experimental.clamp_range" test_clamp_range.cpp)
 add_compute_test("experimental.malloc" test_malloc.cpp)
 add_compute_test("experimental.sort_by_transform" test_sort_by_transform.cpp)
 add_compute_test("experimental.tabulate" test_tabulate.cpp)
-add_compute_test("experimental.transform_if" test_transform_if.cpp)
 
 # miscellaneous tests
 add_compute_test("misc.amd_cpp_kernel_language" test_amd_cpp_kernel_language.cpp)
 add_compute_test("misc.lambda" test_lambda.cpp)
 add_compute_test("misc.user_defined_types" test_user_defined_types.cpp)
+add_compute_test("misc.literal_conversion" test_literal_conversion.cpp)
 
 # extra tests (interop tests, linkage tests, etc.)
 add_subdirectory(extra)

@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #ifndef BOOST_COMPUTE_ALGORITHM_ADJACENT_FIND_HPP
@@ -56,7 +56,9 @@ serial_adjacent_find(InputIterator first,
       << "}\n"
       << "*output = result;\n";
 
-    k.set_arg<const uint_>(size_arg, detail::iterator_range_size(first, last));
+    k.set_arg<const uint_>(
+        size_arg, static_cast<uint_>(detail::iterator_range_size(first, last))
+    );
     k.set_arg(output_arg, output.get_buffer());
 
     k.exec_1d(queue, 0, 1, 1);

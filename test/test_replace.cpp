@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #define BOOST_TEST_MODULE TestReplace
@@ -26,23 +26,23 @@ namespace bc = boost::compute;
 
 BOOST_AUTO_TEST_CASE(replace_int)
 {
-    bc::vector<int> vector(5);
-    bc::iota(vector.begin(), vector.end(), 0);
+    bc::vector<int> vector(5, context);
+    bc::iota(vector.begin(), vector.end(), 0, queue);
     CHECK_RANGE_EQUAL(int, 5, vector, (0, 1, 2, 3, 4));
 
-    bc::replace(vector.begin(), vector.end(), 2, 6);
+    bc::replace(vector.begin(), vector.end(), 2, 6, queue);
     CHECK_RANGE_EQUAL(int, 5, vector, (0, 1, 6, 3, 4));
 }
 
 BOOST_AUTO_TEST_CASE(replace_copy_int)
 {
-    bc::vector<int> a(5);
-    bc::iota(a.begin(), a.end(), 0);
+    bc::vector<int> a(5, context);
+    bc::iota(a.begin(), a.end(), 0, queue);
     CHECK_RANGE_EQUAL(int, 5, a, (0, 1, 2, 3, 4));
 
-    bc::vector<int> b(5);
+    bc::vector<int> b(5, context);
     bc::vector<int>::iterator iter =
-        bc::replace_copy(a.begin(), a.end(), b.begin(), 3, 9);
+        bc::replace_copy(a.begin(), a.end(), b.begin(), 3, 9, queue);
     BOOST_CHECK(iter == b.end());
     CHECK_RANGE_EQUAL(int, 5, b, (0, 1, 2, 9, 4));
 

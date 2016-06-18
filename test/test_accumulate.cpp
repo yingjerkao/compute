@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #define BOOST_TEST_MODULE TestAccumulate
@@ -45,22 +45,25 @@ BOOST_AUTO_TEST_CASE(sum_int)
 BOOST_AUTO_TEST_CASE(product_int)
 {
     int data[] = { 2, 4, 6, 8 };
-    boost::compute::vector<int> vector(data, data + 4);
+    boost::compute::vector<int> vector(data, data + 4, queue);
     BOOST_CHECK_EQUAL(
         boost::compute::accumulate(
-            vector.begin(), vector.end(), 1, boost::compute::multiplies<int>()),
+            vector.begin(), vector.end(), 1, boost::compute::multiplies<int>(),
+            queue),
         384
     );
 
     BOOST_CHECK_EQUAL(
         boost::compute::accumulate(
-            vector.begin(), vector.end(), -1, boost::compute::multiplies<int>()),
+            vector.begin(), vector.end(), -1, boost::compute::multiplies<int>(),
+            queue),
         -384
     );
 
     BOOST_CHECK_EQUAL(
         boost::compute::accumulate(
-            vector.begin(), vector.end(), 2, boost::compute::multiplies<int>()),
+            vector.begin(), vector.end(), 2, boost::compute::multiplies<int>(),
+            queue),
         768
     );
 }
@@ -211,7 +214,7 @@ BOOST_AUTO_TEST_CASE(min_and_max)
 
     BOOST_COMPUTE_FUNCTION(int2_, min_and_max, (int2_ accumulator, const int value),
     {
-        return (int2)(min(accumulator.x, value), max(accumulator.y, value));
+        return (int2)((min)(accumulator.x, value), (max)(accumulator.y, value));
     });
 
     int2_ result = boost::compute::accumulate(
@@ -230,12 +233,12 @@ BOOST_AUTO_TEST_CASE(min_max)
     using ::boost::compute::max;
 
     float min_value = boost::compute::accumulate(
-        vec.begin(), vec.end(), std::numeric_limits<float>::max(), min<float>(), queue
+        vec.begin(), vec.end(), (std::numeric_limits<float>::max)(), min<float>(), queue
     );
     BOOST_CHECK_EQUAL(min_value, 0.1f);
 
     float max_value = boost::compute::accumulate(
-        vec.begin(), vec.end(), std::numeric_limits<float>::min(), max<float>(), queue
+        vec.begin(), vec.end(), (std::numeric_limits<float>::min)(), max<float>(), queue
     );
     BOOST_CHECK_EQUAL(max_value, 9.6f);
 

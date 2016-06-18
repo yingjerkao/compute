@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #ifndef BOOST_COMPUTE_ALGORITHM_STABLE_SORT_HPP
@@ -15,6 +15,7 @@
 
 #include <boost/compute/system.hpp>
 #include <boost/compute/command_queue.hpp>
+#include <boost/compute/algorithm/detail/merge_sort_on_cpu.hpp>
 #include <boost/compute/algorithm/detail/radix_sort.hpp>
 #include <boost/compute/algorithm/detail/insertion_sort.hpp>
 #include <boost/compute/algorithm/reverse.hpp>
@@ -25,10 +26,10 @@ namespace compute {
 namespace detail {
 
 template<class Iterator, class Compare>
-inline void dispatch_stable_sort(Iterator first,
-                                 Iterator last,
-                                 Compare compare,
-                                 command_queue &queue)
+inline void dispatch_gpu_stable_sort(Iterator first,
+                                     Iterator last,
+                                     Compare compare,
+                                     command_queue &queue)
 {
     ::boost::compute::detail::serial_insertion_sort(
         first, last, compare, queue
@@ -37,26 +38,23 @@ inline void dispatch_stable_sort(Iterator first,
 
 template<class T>
 inline typename boost::enable_if_c<is_radix_sortable<T>::value>::type
-dispatch_stable_sort(buffer_iterator<T> first,
-                     buffer_iterator<T> last,
-                     less<T>,
-                     command_queue &queue)
+dispatch_gpu_stable_sort(buffer_iterator<T> first,
+                         buffer_iterator<T> last,
+                         less<T>,
+                         command_queue &queue)
 {
     ::boost::compute::detail::radix_sort(first, last, queue);
 }
 
 template<class T>
 inline typename boost::enable_if_c<is_radix_sortable<T>::value>::type
-dispatch_stable_sort(buffer_iterator<T> first,
-                     buffer_iterator<T> last,
-                     greater<T>,
-                     command_queue &queue)
+dispatch_gpu_stable_sort(buffer_iterator<T> first,
+                         buffer_iterator<T> last,
+                         greater<T>,
+                         command_queue &queue)
 {
-    // radix sort in ascending order
-    ::boost::compute::detail::radix_sort(first, last, queue);
-
-    // reverse range to descending order
-    ::boost::compute::reverse(first, last, queue);
+    // radix sorts in descending order
+    ::boost::compute::detail::radix_sort(first, last, false, queue);
 }
 
 } // end detail namespace
@@ -71,9 +69,12 @@ inline void stable_sort(Iterator first,
                         Compare compare,
                         command_queue &queue = system::default_queue())
 {
-    ::boost::compute::detail::dispatch_stable_sort(
-        first, last, compare, queue
-    );
+    if(queue.get_device().type() & device::gpu) {
+        ::boost::compute::detail::dispatch_gpu_stable_sort(
+            first, last, compare, queue
+        );
+    }
+    ::boost::compute::detail::merge_sort_on_cpu(first, last, compare, queue);
 }
 
 /// \overload

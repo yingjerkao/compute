@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #define BOOST_TEST_MODULE TestIota
@@ -24,17 +24,17 @@ namespace bc = boost::compute;
 
 BOOST_AUTO_TEST_CASE(iota_int)
 {
-    bc::vector<int> vector(4);
-    bc::iota(vector.begin(), vector.end(), 0);
+    bc::vector<int> vector(4, context);
+    bc::iota(vector.begin(), vector.end(), 0, queue);
     CHECK_RANGE_EQUAL(int, 4, vector, (0, 1, 2, 3));
 
-    bc::iota(vector.begin(), vector.end(), 10);
+    bc::iota(vector.begin(), vector.end(), 10, queue);
     CHECK_RANGE_EQUAL(int, 4, vector, (10, 11, 12, 13));
 
-    bc::iota(vector.begin() + 2, vector.end(), -5);
+    bc::iota(vector.begin() + 2, vector.end(), -5, queue);
     CHECK_RANGE_EQUAL(int, 4, vector, (10, 11, -5, -4));
 
-    bc::iota(vector.begin(), vector.end() - 2, 4);
+    bc::iota(vector.begin(), vector.end() - 2, 4, queue);
     CHECK_RANGE_EQUAL(int, 4, vector, (4, 5, -5, -4));
 }
 
@@ -51,16 +51,40 @@ boost::compute::iota(vec.begin(), vec.end(), 0, queue);
 
 BOOST_AUTO_TEST_CASE(iota_permutation_iterator)
 {
-    bc::vector<int> output(5);
-    bc::fill(output.begin(), output.end(), 0);
+    bc::vector<int> output(5, context);
+    bc::fill(output.begin(), output.end(), 0, queue);
 
     int map_data[] = { 2, 0, 1, 4, 3 };
-    bc::vector<int> map(map_data, map_data + 5);
+    bc::vector<int> map(map_data, map_data + 5, queue);
 
-    bc::iota(bc::make_permutation_iterator(output.begin(), map.begin()),
-             bc::make_permutation_iterator(output.end(), map.end()),
-             1);
+    bc::iota(
+        bc::make_permutation_iterator(output.begin(), map.begin()),
+        bc::make_permutation_iterator(output.end(), map.end()),
+        1,
+        queue
+    );
     CHECK_RANGE_EQUAL(int, 5, output, (2, 3, 1, 5, 4));
+}
+
+BOOST_AUTO_TEST_CASE(iota_uint)
+{
+    bc::vector<bc::uint_> vector(4, context);
+    bc::iota(vector.begin(), vector.end(), bc::uint_(0), queue);
+    CHECK_RANGE_EQUAL(bc::uint_, 4, vector, (0, 1, 2, 3));
+}
+
+BOOST_AUTO_TEST_CASE(iota_char)
+{
+    bc::vector<bc::char_> vector(4, context);
+    bc::iota(vector.begin(), vector.end(), bc::uint_(0), queue);
+    CHECK_RANGE_EQUAL(bc::char_, 4, vector, (0, 1, 2, 3));
+}
+
+BOOST_AUTO_TEST_CASE(iota_uchar)
+{
+    bc::vector<bc::uchar_> vector(4, context);
+    bc::iota(vector.begin(), vector.end(), bc::uint_(0), queue);
+    CHECK_RANGE_EQUAL(bc::uchar_, 4, vector, (0, 1, 2, 3));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #ifndef BOOST_COMPUTE_UTILITY_DIM_HPP
@@ -17,7 +17,7 @@
 namespace boost {
 namespace compute {
 
-#ifndef BOOST_NO_VARIADIC_TEMPLATES
+#ifndef BOOST_COMPUTE_NO_VARIADIC_TEMPLATES
 /// The variadic \c dim() function provides a concise syntax for creating
 /// \ref extents objects.
 ///
@@ -61,7 +61,7 @@ BOOST_PP_REPEAT(BOOST_COMPUTE_MAX_ARITY, BOOST_COMPUTE_DETAIL_DEFINE_DIM, ~)
 #undef BOOST_COMPUTE_DETAIL_ASSIGN_DIM
 #undef BOOST_COMPUTE_DETAIL_DEFINE_DIM
 
-#endif // BOOST_NO_VARIADIC_TEMPLATES
+#endif // BOOST_COMPUTE_NO_VARIADIC_TEMPLATES
 
 /// \internal_
 template<size_t N>

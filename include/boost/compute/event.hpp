@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #ifndef BOOST_COMPUTE_EVENT_HPP
@@ -210,7 +210,7 @@ public:
 
     /// Blocks until the actions corresponding to the event have
     /// completed.
-    void wait()
+    void wait() const
     {
         cl_int ret = clWaitForEvents(1, &m_event);
         if(ret != CL_SUCCESS){

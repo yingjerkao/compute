@@ -1,18 +1,26 @@
+[/===========================================================================
+ Copyright (c) 2013-2015 Kyle Lutz <kyle.r.lutz@gmail.com>
+
+ Distributed under the Boost Software License, Version 1.0
+ See accompanying file LICENSE_1_0.txt or copy at
+ http://www.boost.org/LICENSE_1_0.txt
+=============================================================================/]
+
 [section:faq Frequently Asked Questions]
 
 [h3 How do I report a bug, issue, or feature request?]
 
 Please submit an issue on the GitHub issue tracker at
-[@https://github.com/kylelutz/compute/issues].
+[@https://github.com/boostorg/compute/issues].
 
 
 [h3 Where can I find more documentation?]
 
-* The main documentation is here: [@http://kylelutz.github.io/compute/]
-* The README is here: [@https://github.com/kylelutz/compute/blob/master/README.md]
-* The wiki is here: [@https://github.com/kylelutz/compute/wiki]
-* The contributor guide is here: [@https://github.com/kylelutz/compute/blob/master/CONTRIBUTING.md]
-* The reference is here: [@http://kylelutz.github.io/compute/compute/reference.html]
+* The main documentation is here: [@http://boostorg.github.io/compute/]
+* The README is here: [@https://github.com/boostorg/compute/blob/master/README.md]
+* The wiki is here: [@https://github.com/boostorg/compute/wiki]
+* The contributor guide is here: [@https://github.com/boostorg/compute/blob/master/CONTRIBUTING.md]
+* The reference is here: [@http://boostorg.github.io/compute/compute/reference.html]
 
 
 [h3 Where is the best place to ask questions about the library?]
@@ -47,8 +55,11 @@ VexCL is an expression-template based linear-algebra library for
 OpenCL. The aims and scope are a bit different from the Boost Compute
 library. VexCL is closer in nature to the Eigen library while
 Boost.Compute is closer to the C++ standard library. I don't feel that
-Boost.Compute really fills the same role as VexCL and in fact VexCL
-could be built on top of Boost.Compute.
+Boost.Compute really fills the same role as VexCL. In fact, the recent versions
+of VexCL allow to use Boost.Compute as one of the backends, which makes
+the interaction between the two libraries a breeze.
+
+
 
 Also see this StackOverflow question:
 [@http://stackoverflow.com/questions/20154179/differences-between-vexcl-thrust-and-boost-compute]
@@ -163,8 +174,8 @@ GPGPU and parallel-computing.
 Please send an email to Kyle Lutz (kyle.r.lutz@gmail.com) for more information.
 
 Also see the
-[@https://github.com/kylelutz/compute/blob/master/CONTRIBUTING.md contributor guide]
+[@https://github.com/boostorg/compute/blob/master/CONTRIBUTING.md contributor guide]
 and check out the list of issues at:
-[@https://github.com/kylelutz/compute/issues].
+[@https://github.com/boostorg/compute/issues].
 
 [endsect] [/ faq ]

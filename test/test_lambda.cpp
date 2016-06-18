@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #define BOOST_TEST_MODULE TestLambda
@@ -33,34 +33,36 @@ namespace compute = boost::compute;
 
 BOOST_AUTO_TEST_CASE(squared_plus_one)
 {
-    bc::vector<int> vector;
-    vector.push_back(1);
-    vector.push_back(2);
-    vector.push_back(3);
-    vector.push_back(4);
-    vector.push_back(5);
+    bc::vector<int> vector(context);
+    vector.push_back(1, queue);
+    vector.push_back(2, queue);
+    vector.push_back(3, queue);
+    vector.push_back(4, queue);
+    vector.push_back(5, queue);
 
     // multiply each value by itself and add one
     bc::transform(vector.begin(),
                   vector.end(),
                   vector.begin(),
-                  (bc::_1 * bc::_1) + 1);
+                  (bc::_1 * bc::_1) + 1,
+                  queue);
     CHECK_RANGE_EQUAL(int, 5, vector, (2, 5, 10, 17, 26));
 }
 
 BOOST_AUTO_TEST_CASE(abs_int)
 {
-    bc::vector<int> vector;
-    vector.push_back(-1);
-    vector.push_back(-2);
-    vector.push_back(3);
-    vector.push_back(-4);
-    vector.push_back(5);
+    bc::vector<int> vector(context);
+    vector.push_back(-1, queue);
+    vector.push_back(-2, queue);
+    vector.push_back(3, queue);
+    vector.push_back(-4, queue);
+    vector.push_back(5, queue);
 
     bc::transform(vector.begin(),
                   vector.end(),
                   vector.begin(),
-                  abs(bc::_1));
+                  abs(bc::_1),
+                  queue);
     CHECK_RANGE_EQUAL(int, 5, vector, (1, 2, 3, 4, 5));
 }
 
@@ -265,10 +267,10 @@ BOOST_AUTO_TEST_CASE(lambda_get_pair)
     using boost::compute::lambda::get;
 
     compute::vector<std::pair<int, float> > vector(context);
-    vector.push_back(std::make_pair(1, 1.2f));
-    vector.push_back(std::make_pair(3, 3.4f));
-    vector.push_back(std::make_pair(5, 5.6f));
-    vector.push_back(std::make_pair(7, 7.8f));
+    vector.push_back(std::make_pair(1, 1.2f), queue);
+    vector.push_back(std::make_pair(3, 3.4f), queue);
+    vector.push_back(std::make_pair(5, 5.6f), queue);
+    vector.push_back(std::make_pair(7, 7.8f), queue);
 
     // extract first compoenent of each pair
     compute::vector<int> first_component(4, context);
@@ -300,12 +302,12 @@ BOOST_AUTO_TEST_CASE(lambda_get_tuple)
 
     compute::vector<boost::tuple<int, char, float> > vector(context);
 
-    vector.push_back(boost::make_tuple(1, 'a', 1.2f));
-    vector.push_back(boost::make_tuple(3, 'b', 3.4f));
-    vector.push_back(boost::make_tuple(5, 'c', 5.6f));
-    vector.push_back(boost::make_tuple(7, 'd', 7.8f));
+    vector.push_back(boost::make_tuple(1, 'a', 1.2f), queue);
+    vector.push_back(boost::make_tuple(3, 'b', 3.4f), queue);
+    vector.push_back(boost::make_tuple(5, 'c', 5.6f), queue);
+    vector.push_back(boost::make_tuple(7, 'd', 7.8f), queue);
 
-    // extract first compoenent of each tuple
+    // extract first component of each tuple
     compute::vector<int> first_component(4, context);
     compute::transform(
         vector.begin(),
@@ -316,7 +318,7 @@ BOOST_AUTO_TEST_CASE(lambda_get_tuple)
     );
     CHECK_RANGE_EQUAL(int, 4, first_component, (1, 3, 5, 7));
 
-    // extract second compoenent of each tuple
+    // extract second component of each tuple
     compute::vector<char> second_component(4, context);
     compute::transform(
         vector.begin(),
@@ -327,7 +329,7 @@ BOOST_AUTO_TEST_CASE(lambda_get_tuple)
     );
     CHECK_RANGE_EQUAL(char, 4, second_component, ('a', 'b', 'c', 'd'));
 
-    // extract third compoenent of each tuple
+    // extract third component of each tuple
     compute::vector<float> third_component(4, context);
     compute::transform(
         vector.begin(),
@@ -346,7 +348,7 @@ BOOST_AUTO_TEST_CASE(lambda_get_zip_iterator)
 
     float data[] = { 1.2f, 2.3f, 3.4f, 4.5f, 5.6f, 6.7f, 7.8f, 9.0f };
     compute::vector<float> input(8, context);
-    compute::copy(data, data + 8, input.begin());
+    compute::copy(data, data + 8, input.begin(), queue);
 
     compute::vector<float> output(8, context);
 
@@ -357,7 +359,8 @@ BOOST_AUTO_TEST_CASE(lambda_get_zip_iterator)
         compute::make_zip_iterator(
             boost::make_tuple(input.end(), output.end())
         ),
-        get<1>(_1) = get<0>(_1)
+        get<1>(_1) = get<0>(_1),
+        queue
     );
     CHECK_RANGE_EQUAL(float, 8, output,
         (1.2f, 2.3f, 3.4f, 4.5f, 5.6f, 6.7f, 7.8f, 9.0f)

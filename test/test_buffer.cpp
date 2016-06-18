@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #define BOOST_TEST_MODULE TestBuffer
@@ -15,6 +15,12 @@
 #include <boost/compute/system.hpp>
 #include <boost/bind.hpp>
 
+#ifdef BOOST_COMPUTE_USE_CPP11
+#include <mutex>
+#include <future>
+#endif // BOOST_COMPUTE_USE_CPP11
+
+#include "quirks.hpp"
 #include "context_setup.hpp"
 
 namespace bc = boost::compute;
@@ -118,6 +124,11 @@ BOOST_AUTO_TEST_CASE(destructor_callback)
 {
     REQUIRES_OPENCL_VERSION(1,2);
 
+    if(!supports_destructor_callback(device))
+    {
+        return;
+    }
+
     bool invoked = false;
     {
         boost::compute::buffer buf(context, 128);
@@ -126,24 +137,48 @@ BOOST_AUTO_TEST_CASE(destructor_callback)
     BOOST_CHECK(invoked == true);
 }
 
+#ifdef BOOST_COMPUTE_USE_CPP11
+
+std::mutex callback_mutex;
+std::condition_variable callback_condition_variable;
+
 static void BOOST_COMPUTE_CL_CALLBACK
 destructor_templated_callback_function(bool *flag)
 {
+    std::lock_guard<std::mutex> lock(callback_mutex);
     *flag = true;
+    callback_condition_variable.notify_one();
 }
 
 BOOST_AUTO_TEST_CASE(destructor_templated_callback)
 {
+    REQUIRES_OPENCL_VERSION(1,2);
+
+    if(!supports_destructor_callback(device))
+    {
+        return;
+    }
+
     bool invoked = false;
     {
         boost::compute::buffer buf(context, 128);
         buf.set_destructor_callback(boost::bind(destructor_templated_callback_function, &invoked));
     }
+
+    std::unique_lock<std::mutex> lock(callback_mutex);
+    callback_condition_variable.wait_for(
+        lock, std::chrono::seconds(1), [&](){ return invoked; }
+    );
+
     BOOST_CHECK(invoked == true);
 }
 
+#endif // BOOST_COMPUTE_USE_CPP11
+
 BOOST_AUTO_TEST_CASE(create_subbuffer)
 {
+    REQUIRES_OPENCL_VERSION(1, 1);
+
     size_t base_addr_align = device.get_info<CL_DEVICE_MEM_BASE_ADDR_ALIGN>() / 8;
     size_t multiplier = 16;
     size_t buffer_size = base_addr_align * multiplier;

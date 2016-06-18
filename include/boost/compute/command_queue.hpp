@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #ifndef BOOST_COMPUTE_COMMAND_QUEUE_HPP
@@ -30,6 +30,7 @@
 #include <boost/compute/utility/wait_list.hpp>
 #include <boost/compute/detail/get_object_info.hpp>
 #include <boost/compute/detail/assert_cl_success.hpp>
+#include <boost/compute/detail/diagnostic.hpp>
 #include <boost/compute/utility/extents.hpp>
 
 namespace boost {
@@ -85,7 +86,7 @@ public:
     enum map_flags {
         map_read = CL_MAP_READ,
         map_write = CL_MAP_WRITE
-        #ifdef CL_VERSION_2_0
+        #ifdef CL_VERSION_1_2
         ,
         map_write_invalidate_region = CL_MAP_WRITE_INVALIDATE_REGION
         #endif
@@ -118,24 +119,30 @@ public:
         cl_int error = 0;
 
         #ifdef CL_VERSION_2_0
-        std::vector<cl_queue_properties> queue_properties;
-        if(properties){
-            queue_properties.push_back(CL_QUEUE_PROPERTIES);
-            queue_properties.push_back(cl_queue_properties(properties));
-            queue_properties.push_back(cl_queue_properties(0));
-        }
+        if (device.check_version(2, 0)){
+            std::vector<cl_queue_properties> queue_properties;
+            if(properties){
+                queue_properties.push_back(CL_QUEUE_PROPERTIES);
+                queue_properties.push_back(cl_queue_properties(properties));
+                queue_properties.push_back(cl_queue_properties(0));
+            }
 
-        const cl_queue_properties *queue_properties_ptr =
-            queue_properties.empty() ? 0 : &queue_properties[0];
+            const cl_queue_properties *queue_properties_ptr =
+                queue_properties.empty() ? 0 : &queue_properties[0];
 
-        m_queue = clCreateCommandQueueWithProperties(
-            context, device.id(), queue_properties_ptr, &error
-        );
-        #else
-        m_queue = clCreateCommandQueue(
-            context, device.id(), properties, &error
-        );
+            m_queue = clCreateCommandQueueWithProperties(
+                context, device.id(), queue_properties_ptr, &error
+            );
+        } else
         #endif
+        {
+            // Suppress deprecated declarations warning
+            BOOST_COMPUTE_DISABLE_DEPRECATED_DECLARATIONS();
+            m_queue = clCreateCommandQueue(
+                context, device.id(), properties, &error
+            );
+            BOOST_COMPUTE_ENABLE_DEPRECATED_DECLARATIONS();
+        }
 
         if(!m_queue){
             BOOST_THROW_EXCEPTION(opencl_error(error));
@@ -246,16 +253,18 @@ public:
     /// \see_opencl_ref{clEnqueueReadBuffer}
     ///
     /// \see copy()
-    void enqueue_read_buffer(const buffer &buffer,
-                             size_t offset,
-                             size_t size,
-                             void *host_ptr,
-                             const wait_list &events = wait_list())
+    event enqueue_read_buffer(const buffer &buffer,
+                              size_t offset,
+                              size_t size,
+                              void *host_ptr,
+                              const wait_list &events = wait_list())
     {
         BOOST_ASSERT(m_queue != 0);
         BOOST_ASSERT(size <= buffer.size());
         BOOST_ASSERT(buffer.get_context() == this->get_context());
         BOOST_ASSERT(host_ptr != 0);
+
+        event event_;
 
         cl_int ret = clEnqueueReadBuffer(
             m_queue,
@@ -266,12 +275,14 @@ public:
             host_ptr,
             events.size(),
             events.get_event_ptr(),
-            0
+            &event_.get()
         );
 
         if(ret != CL_SUCCESS){
             BOOST_THROW_EXCEPTION(opencl_error(ret));
         }
+
+        return event_;
     }
 
     /// Enqueues a command to read data from \p buffer to host memory. The
@@ -319,20 +330,22 @@ public:
     /// \see_opencl_ref{clEnqueueReadBufferRect}
     ///
     /// \opencl_version_warning{1,1}
-    void enqueue_read_buffer_rect(const buffer &buffer,
-                                  const size_t buffer_origin[3],
-                                  const size_t host_origin[3],
-                                  const size_t region[3],
-                                  size_t buffer_row_pitch,
-                                  size_t buffer_slice_pitch,
-                                  size_t host_row_pitch,
-                                  size_t host_slice_pitch,
-                                  void *host_ptr,
-                                  const wait_list &events = wait_list())
+    event enqueue_read_buffer_rect(const buffer &buffer,
+                                   const size_t buffer_origin[3],
+                                   const size_t host_origin[3],
+                                   const size_t region[3],
+                                   size_t buffer_row_pitch,
+                                   size_t buffer_slice_pitch,
+                                   size_t host_row_pitch,
+                                   size_t host_slice_pitch,
+                                   void *host_ptr,
+                                   const wait_list &events = wait_list())
     {
         BOOST_ASSERT(m_queue != 0);
         BOOST_ASSERT(buffer.get_context() == this->get_context());
         BOOST_ASSERT(host_ptr != 0);
+
+        event event_;
 
         cl_int ret = clEnqueueReadBufferRect(
             m_queue,
@@ -348,12 +361,61 @@ public:
             host_ptr,
             events.size(),
             events.get_event_ptr(),
-            0
+            &event_.get()
         );
 
         if(ret != CL_SUCCESS){
             BOOST_THROW_EXCEPTION(opencl_error(ret));
         }
+
+        return event_;
+    }
+
+    /// Enqueues a command to read a rectangular region from \p buffer to
+    /// host memory. The copy will be performed asynchronously.
+    ///
+    /// \see_opencl_ref{clEnqueueReadBufferRect}
+    ///
+    /// \opencl_version_warning{1,1}
+    event enqueue_read_buffer_rect_async(const buffer &buffer,
+                                         const size_t buffer_origin[3],
+                                         const size_t host_origin[3],
+                                         const size_t region[3],
+                                         size_t buffer_row_pitch,
+                                         size_t buffer_slice_pitch,
+                                         size_t host_row_pitch,
+                                         size_t host_slice_pitch,
+                                         void *host_ptr,
+                                         const wait_list &events = wait_list())
+    {
+        BOOST_ASSERT(m_queue != 0);
+        BOOST_ASSERT(buffer.get_context() == this->get_context());
+        BOOST_ASSERT(host_ptr != 0);
+
+        event event_;
+
+        cl_int ret = clEnqueueReadBufferRect(
+            m_queue,
+            buffer.get(),
+            CL_FALSE,
+            buffer_origin,
+            host_origin,
+            region,
+            buffer_row_pitch,
+            buffer_slice_pitch,
+            host_row_pitch,
+            host_slice_pitch,
+            host_ptr,
+            events.size(),
+            events.get_event_ptr(),
+            &event_.get()
+        );
+
+        if(ret != CL_SUCCESS){
+            BOOST_THROW_EXCEPTION(opencl_error(ret));
+        }
+
+        return event_;
     }
     #endif // CL_VERSION_1_1
 
@@ -362,16 +424,18 @@ public:
     /// \see_opencl_ref{clEnqueueWriteBuffer}
     ///
     /// \see copy()
-    void enqueue_write_buffer(const buffer &buffer,
-                              size_t offset,
-                              size_t size,
-                              const void *host_ptr,
-                              const wait_list &events = wait_list())
+    event enqueue_write_buffer(const buffer &buffer,
+                               size_t offset,
+                               size_t size,
+                               const void *host_ptr,
+                               const wait_list &events = wait_list())
     {
         BOOST_ASSERT(m_queue != 0);
         BOOST_ASSERT(size <= buffer.size());
         BOOST_ASSERT(buffer.get_context() == this->get_context());
         BOOST_ASSERT(host_ptr != 0);
+
+        event event_;
 
         cl_int ret = clEnqueueWriteBuffer(
             m_queue,
@@ -382,12 +446,14 @@ public:
             host_ptr,
             events.size(),
             events.get_event_ptr(),
-            0
+            &event_.get()
         );
 
         if(ret != CL_SUCCESS){
             BOOST_THROW_EXCEPTION(opencl_error(ret));
         }
+
+        return event_;
     }
 
     /// Enqueues a command to write data from host memory to \p buffer.
@@ -435,20 +501,22 @@ public:
     /// \see_opencl_ref{clEnqueueWriteBufferRect}
     ///
     /// \opencl_version_warning{1,1}
-    void enqueue_write_buffer_rect(const buffer &buffer,
-                                   const size_t buffer_origin[3],
-                                   const size_t host_origin[3],
-                                   const size_t region[3],
-                                   size_t buffer_row_pitch,
-                                   size_t buffer_slice_pitch,
-                                   size_t host_row_pitch,
-                                   size_t host_slice_pitch,
-                                   void *host_ptr,
-                                   const wait_list &events = wait_list())
+    event enqueue_write_buffer_rect(const buffer &buffer,
+                                    const size_t buffer_origin[3],
+                                    const size_t host_origin[3],
+                                    const size_t region[3],
+                                    size_t buffer_row_pitch,
+                                    size_t buffer_slice_pitch,
+                                    size_t host_row_pitch,
+                                    size_t host_slice_pitch,
+                                    void *host_ptr,
+                                    const wait_list &events = wait_list())
     {
         BOOST_ASSERT(m_queue != 0);
         BOOST_ASSERT(buffer.get_context() == this->get_context());
         BOOST_ASSERT(host_ptr != 0);
+
+        event event_;
 
         cl_int ret = clEnqueueWriteBufferRect(
             m_queue,
@@ -464,12 +532,61 @@ public:
             host_ptr,
             events.size(),
             events.get_event_ptr(),
-            0
+            &event_.get()
         );
 
         if(ret != CL_SUCCESS){
             BOOST_THROW_EXCEPTION(opencl_error(ret));
         }
+
+        return event_;
+    }
+
+    /// Enqueues a command to write a rectangular region from host memory
+    /// to \p buffer. The copy is performed asynchronously.
+    ///
+    /// \see_opencl_ref{clEnqueueWriteBufferRect}
+    ///
+    /// \opencl_version_warning{1,1}
+    event enqueue_write_buffer_rect_async(const buffer &buffer,
+                                          const size_t buffer_origin[3],
+                                          const size_t host_origin[3],
+                                          const size_t region[3],
+                                          size_t buffer_row_pitch,
+                                          size_t buffer_slice_pitch,
+                                          size_t host_row_pitch,
+                                          size_t host_slice_pitch,
+                                          void *host_ptr,
+                                          const wait_list &events = wait_list())
+    {
+        BOOST_ASSERT(m_queue != 0);
+        BOOST_ASSERT(buffer.get_context() == this->get_context());
+        BOOST_ASSERT(host_ptr != 0);
+
+        event event_;
+
+        cl_int ret = clEnqueueWriteBufferRect(
+            m_queue,
+            buffer.get(),
+            CL_FALSE,
+            buffer_origin,
+            host_origin,
+            region,
+            buffer_row_pitch,
+            buffer_slice_pitch,
+            host_row_pitch,
+            host_slice_pitch,
+            host_ptr,
+            events.size(),
+            events.get_event_ptr(),
+            &event_.get()
+        );
+
+        if(ret != CL_SUCCESS){
+            BOOST_THROW_EXCEPTION(opencl_error(ret));
+        }
+
+        return event_;
     }
     #endif // CL_VERSION_1_1
 
@@ -603,12 +720,15 @@ public:
     #endif // CL_VERSION_1_2
 
     /// Enqueues a command to map \p buffer into the host address space.
+    /// Event associated with map operation is returned through
+    /// \p map_buffer_event parameter.
     ///
     /// \see_opencl_ref{clEnqueueMapBuffer}
     void* enqueue_map_buffer(const buffer &buffer,
                              cl_map_flags flags,
                              size_t offset,
                              size_t size,
+                             event &map_buffer_event,
                              const wait_list &events = wait_list())
     {
         BOOST_ASSERT(m_queue != 0);
@@ -625,7 +745,58 @@ public:
             size,
             events.size(),
             events.get_event_ptr(),
-            0,
+            &map_buffer_event.get(),
+            &ret
+        );
+
+        if(ret != CL_SUCCESS){
+            BOOST_THROW_EXCEPTION(opencl_error(ret));
+        }
+
+        return pointer;
+    }
+
+    /// \overload
+    void* enqueue_map_buffer(const buffer &buffer,
+                             cl_map_flags flags,
+                             size_t offset,
+                             size_t size,
+                             const wait_list &events = wait_list())
+    {
+        event event_;
+        return enqueue_map_buffer(buffer, flags, offset, size, event_, events);
+    }
+
+    /// Enqueues a command to map \p buffer into the host address space.
+    /// Map operation is performed asynchronously. The pointer to the mapped
+    /// region cannot be used until the map operation has completed.
+    ///
+    /// Event associated with map operation is returned through
+    /// \p map_buffer_event parameter.
+    ///
+    /// \see_opencl_ref{clEnqueueMapBuffer}
+    void* enqueue_map_buffer_async(const buffer &buffer,
+                                   cl_map_flags flags,
+                                   size_t offset,
+                                   size_t size,
+                                   event &map_buffer_event,
+                                   const wait_list &events = wait_list())
+    {
+        BOOST_ASSERT(m_queue != 0);
+        BOOST_ASSERT(offset + size <= buffer.size());
+        BOOST_ASSERT(buffer.get_context() == this->get_context());
+
+        cl_int ret = 0;
+        void *pointer = clEnqueueMapBuffer(
+            m_queue,
+            buffer.get(),
+            CL_FALSE,
+            flags,
+            offset,
+            size,
+            events.size(),
+            events.get_event_ptr(),
+            &map_buffer_event.get(),
             &ret
         );
 
@@ -791,6 +962,185 @@ public:
         return enqueue_write_image(
             image, origin3, region3, host_ptr, input_row_pitch, input_slice_pitch, events
         );
+    }
+
+    /// Enqueues a command to map \p image into the host address space.
+    ///
+    /// Event associated with map operation is returned through
+    /// \p map_image_event parameter.
+    ///
+    /// \see_opencl_ref{clEnqueueMapImage}
+    void* enqueue_map_image(const image_object &image,
+                            cl_map_flags flags,
+                            const size_t *origin,
+                            const size_t *region,
+                            size_t &output_row_pitch,
+                            size_t &output_slice_pitch,
+                            event &map_image_event,
+                            const wait_list &events = wait_list())
+    {
+        BOOST_ASSERT(m_queue != 0);
+        BOOST_ASSERT(image.get_context() == this->get_context());
+
+        cl_int ret = 0;
+        void *pointer = clEnqueueMapImage(
+            m_queue,
+            image.get(),
+            CL_TRUE,
+            flags,
+            origin,
+            region,
+            &output_row_pitch,
+            &output_slice_pitch,
+            events.size(),
+            events.get_event_ptr(),
+            &map_image_event.get(),
+            &ret
+        );
+
+        if(ret != CL_SUCCESS){
+            BOOST_THROW_EXCEPTION(opencl_error(ret));
+        }
+
+        return pointer;
+    }
+
+    /// \overload
+    void* enqueue_map_image(const image_object &image,
+                            cl_map_flags flags,
+                            const size_t *origin,
+                            const size_t *region,
+                            size_t &output_row_pitch,
+                            size_t &output_slice_pitch,
+                            const wait_list &events = wait_list())
+    {
+        event event_;
+        return enqueue_map_image(
+            image, flags, origin, region,
+            output_row_pitch, output_slice_pitch, event_, events
+        );
+    }
+
+    /// \overload
+    template<size_t N>
+    void* enqueue_map_image(image_object& image,
+                            cl_map_flags flags,
+                            const extents<N> origin,
+                            const extents<N> region,
+                            size_t &output_row_pitch,
+                            size_t &output_slice_pitch,
+                            event &map_image_event,
+                            const wait_list &events = wait_list())
+    {
+        BOOST_ASSERT(image.get_context() == this->get_context());
+
+        size_t origin3[3] = { 0, 0, 0 };
+        size_t region3[3] = { 1, 1, 1 };
+
+        std::copy(origin.data(), origin.data() + N, origin3);
+        std::copy(region.data(), region.data() + N, region3);
+
+        return enqueue_map_image(
+            image, flags, origin3, region3,
+            output_row_pitch, output_slice_pitch, map_image_event, events
+        );
+    }
+
+    /// \overload
+    template<size_t N>
+    void* enqueue_map_image(image_object& image,
+                            cl_map_flags flags,
+                            const extents<N> origin,
+                            const extents<N> region,
+                            size_t &output_row_pitch,
+                            size_t &output_slice_pitch,
+                            const wait_list &events = wait_list())
+    {
+        event event_;
+        return enqueue_map_image(
+            image, flags, origin, region,
+            output_row_pitch, output_slice_pitch, event_, events
+        );
+    }
+
+    /// Enqueues a command to map \p image into the host address space.
+    /// Map operation is performed asynchronously. The pointer to the mapped
+    /// region cannot be used until the map operation has completed.
+    ///
+    /// Event associated with map operation is returned through
+    /// \p map_image_event parameter.
+    ///
+    /// \see_opencl_ref{clEnqueueMapImage}
+    void* enqueue_map_image_async(const image_object &image,
+                                  cl_map_flags flags,
+                                  const size_t *origin,
+                                  const size_t *region,
+                                  size_t &output_row_pitch,
+                                  size_t &output_slice_pitch,
+                                  event &map_image_event,
+                                  const wait_list &events = wait_list())
+    {
+        BOOST_ASSERT(m_queue != 0);
+        BOOST_ASSERT(image.get_context() == this->get_context());
+
+        cl_int ret = 0;
+        void *pointer = clEnqueueMapImage(
+            m_queue,
+            image.get(),
+            CL_FALSE,
+            flags,
+            origin,
+            region,
+            &output_row_pitch,
+            &output_slice_pitch,
+            events.size(),
+            events.get_event_ptr(),
+            &map_image_event.get(),
+            &ret
+        );
+
+        if(ret != CL_SUCCESS){
+            BOOST_THROW_EXCEPTION(opencl_error(ret));
+        }
+
+        return pointer;
+    }
+
+    /// \overload
+    template<size_t N>
+    void* enqueue_map_image_async(image_object& image,
+                                  cl_map_flags flags,
+                                  const extents<N> origin,
+                                  const extents<N> region,
+                                  size_t &output_row_pitch,
+                                  size_t &output_slice_pitch,
+                                  event &map_image_event,
+                                  const wait_list &events = wait_list())
+    {
+        BOOST_ASSERT(image.get_context() == this->get_context());
+
+        size_t origin3[3] = { 0, 0, 0 };
+        size_t region3[3] = { 1, 1, 1 };
+
+        std::copy(origin.data(), origin.data() + N, origin3);
+        std::copy(region.data(), region.data() + N, region3);
+
+        return enqueue_map_image_async(
+            image, flags, origin3, region3,
+            output_row_pitch, output_slice_pitch, map_image_event, events
+        );
+    }
+
+    /// Enqueues a command to unmap \p image from the host memory space.
+    ///
+    /// \see_opencl_ref{clEnqueueUnmapMemObject}
+    event enqueue_unmap_image(const image_object &image,
+                              void *mapped_ptr,
+                              const wait_list &events = wait_list())
+    {
+        BOOST_ASSERT(image.get_context() == this->get_context());
+
+        return enqueue_unmap_mem_object(image.get(), mapped_ptr, events);
     }
 
     /// Enqueues a command to copy data from \p src_image to \p dst_image.
@@ -1178,25 +1528,45 @@ public:
     void enqueue_barrier()
     {
         BOOST_ASSERT(m_queue != 0);
+        cl_int ret = CL_SUCCESS;
 
         #ifdef CL_VERSION_1_2
-        clEnqueueBarrierWithWaitList(m_queue, 0, 0, 0);
-        #else
-        clEnqueueBarrier(m_queue);
-        #endif
+        if(get_device().check_version(1, 2)){
+            ret = clEnqueueBarrierWithWaitList(m_queue, 0, 0, 0);
+        } else
+        #endif // CL_VERSION_1_2
+        {
+            // Suppress deprecated declarations warning
+            BOOST_COMPUTE_DISABLE_DEPRECATED_DECLARATIONS();
+            ret = clEnqueueBarrier(m_queue);
+            BOOST_COMPUTE_ENABLE_DEPRECATED_DECLARATIONS();
+        }
+
+        if(ret != CL_SUCCESS){
+            BOOST_THROW_EXCEPTION(opencl_error(ret));
+        }
     }
 
     #if defined(CL_VERSION_1_2) || defined(BOOST_COMPUTE_DOXYGEN_INVOKED)
     /// Enqueues a barrier in the queue after \p events.
     ///
     /// \opencl_version_warning{1,2}
-    void enqueue_barrier(const wait_list &events)
+    event enqueue_barrier(const wait_list &events)
     {
         BOOST_ASSERT(m_queue != 0);
 
-        clEnqueueBarrierWithWaitList(
-            m_queue, events.size(), events.get_event_ptr(), 0
+        event event_;
+        cl_int ret = CL_SUCCESS;
+
+        ret = clEnqueueBarrierWithWaitList(
+            m_queue, events.size(), events.get_event_ptr(), &event_.get()
         );
+
+        if(ret != CL_SUCCESS){
+            BOOST_THROW_EXCEPTION(opencl_error(ret));
+        }
+
+        return event_;
     }
     #endif // CL_VERSION_1_2
 
@@ -1205,12 +1575,19 @@ public:
     event enqueue_marker()
     {
         event event_;
+        cl_int ret = CL_SUCCESS;
 
         #ifdef CL_VERSION_1_2
-        cl_int ret = clEnqueueMarkerWithWaitList(m_queue, 0, 0, &event_.get());
-        #else
-        cl_int ret = clEnqueueMarker(m_queue, &event_.get());
+        if(get_device().check_version(1, 2)){
+            ret = clEnqueueMarkerWithWaitList(m_queue, 0, 0, &event_.get());
+        } else
         #endif
+        {
+            // Suppress deprecated declarations warning
+            BOOST_COMPUTE_DISABLE_DEPRECATED_DECLARATIONS();
+            ret = clEnqueueMarker(m_queue, &event_.get());
+            BOOST_COMPUTE_ENABLE_DEPRECATED_DECLARATIONS();
+        }
 
         if(ret != CL_SUCCESS){
             BOOST_THROW_EXCEPTION(opencl_error(ret));
@@ -1247,11 +1624,13 @@ public:
     /// \opencl_version_warning{2,0}
     ///
     /// \see_opencl2_ref{clEnqueueSVMMemcpy}
-    void enqueue_svm_memcpy(void *dst_ptr,
-                            const void *src_ptr,
-                            size_t size,
-                            const wait_list &events = wait_list())
+    event enqueue_svm_memcpy(void *dst_ptr,
+                             const void *src_ptr,
+                             size_t size,
+                             const wait_list &events = wait_list())
     {
+        event event_;
+
         cl_int ret = clEnqueueSVMMemcpy(
             m_queue,
             CL_TRUE,
@@ -1260,12 +1639,14 @@ public:
             size,
             events.size(),
             events.get_event_ptr(),
-            0
+            &event_.get()
         );
 
         if(ret != CL_SUCCESS){
             BOOST_THROW_EXCEPTION(opencl_error(ret));
         }
+
+        return event_;
     }
 
     /// Enqueues a command to copy \p size bytes of data from \p src_ptr to
@@ -1367,11 +1748,13 @@ public:
     /// \opencl_version_warning{2,0}
     ///
     /// \see_opencl2_ref{clEnqueueSVMMap}
-    void enqueue_svm_map(void *svm_ptr,
-                         size_t size,
-                         cl_map_flags flags,
-                         const wait_list &events = wait_list())
+    event enqueue_svm_map(void *svm_ptr,
+                          size_t size,
+                          cl_map_flags flags,
+                          const wait_list &events = wait_list())
     {
+        event event_;
+
         cl_int ret = clEnqueueSVMMap(
             m_queue,
             CL_TRUE,
@@ -1380,12 +1763,14 @@ public:
             size,
             events.size(),
             events.get_event_ptr(),
-            0
+            &event_.get()
         );
 
         if(ret != CL_SUCCESS){
             BOOST_THROW_EXCEPTION(opencl_error(ret));
         }
+
+        return event_;
     }
 
     /// Enqueues a command to unmap \p svm_ptr from the host memory space.

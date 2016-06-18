@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #define BOOST_TEST_MODULE TestIsPermutation
@@ -31,7 +31,7 @@ BOOST_AUTO_TEST_CASE(is_permutation_int)
     bc::vector<bc::int_> vector2(dataset2, dataset2 + 5, queue);
 
     bool result =
-    	bc::is_permutation(vector1.begin(), vector1.begin() + 5,
+        bc::is_permutation(vector1.begin(), vector1.begin() + 5,
                            vector2.begin(), vector2.begin() + 5, queue);
 
     BOOST_VERIFY(result == true);

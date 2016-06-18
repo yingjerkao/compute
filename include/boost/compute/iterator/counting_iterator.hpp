@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #ifndef BOOST_COMPUTE_ITERATOR_COUNTING_ITERATOR_HPP
@@ -151,7 +151,7 @@ private:
 
     difference_type distance_to(const counting_iterator<T> &other) const
     {
-        return other.m_init - m_init;
+        return difference_type(other.m_init) - difference_type(m_init);
     }
 
 private:

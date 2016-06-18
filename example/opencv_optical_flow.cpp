@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #include <iostream>
@@ -27,6 +27,8 @@ namespace po = boost::program_options;
 
 // Create naive optical flow program
 const char source[] = BOOST_COMPUTE_STRINGIZE_SOURCE (
+    const sampler_t sampler = CLK_ADDRESS_CLAMP_TO_EDGE;
+
     __kernel void optical_flow (
                                 read_only
                                 image2d_t current_image,
@@ -37,7 +39,6 @@ const char source[] = BOOST_COMPUTE_STRINGIZE_SOURCE (
                                 const float lambda,
                                 const float threshold )
     {
-        sampler_t sampler = CLK_ADDRESS_CLAMP_TO_EDGE;
         int2 coords = (int2)(get_global_id(0), get_global_id(1));
         float4 current_pixel    = read_imagef(current_image,
                                               sampler,
@@ -45,8 +46,8 @@ const char source[] = BOOST_COMPUTE_STRINGIZE_SOURCE (
         float4 previous_pixel   = read_imagef(previous_image,
                                               sampler,
                                               coords);
-        int2 x1 	= (int2)(offset, 0.f);
-        int2 y1 	= (int2)(0.f, offset);
+        int2 x1     = (int2)(offset, 0.f);
+        int2 y1     = (int2)(0.f, offset);
 
         //get the difference
         float4 curdif = previous_pixel - current_pixel;

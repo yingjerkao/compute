@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #ifndef BOOST_COMPUTE_ALGORITHM_HPP
@@ -63,6 +63,7 @@
 #include <boost/compute/algorithm/prev_permutation.hpp>
 #include <boost/compute/algorithm/random_shuffle.hpp>
 #include <boost/compute/algorithm/reduce.hpp>
+#include <boost/compute/algorithm/reduce_by_key.hpp>
 #include <boost/compute/algorithm/remove.hpp>
 #include <boost/compute/algorithm/remove_if.hpp>
 #include <boost/compute/algorithm/replace.hpp>
@@ -82,6 +83,7 @@
 #include <boost/compute/algorithm/sort_by_key.hpp>
 #include <boost/compute/algorithm/stable_partition.hpp>
 #include <boost/compute/algorithm/stable_sort.hpp>
+#include <boost/compute/algorithm/stable_sort_by_key.hpp>
 #include <boost/compute/algorithm/swap_ranges.hpp>
 #include <boost/compute/algorithm/transform.hpp>
 #include <boost/compute/algorithm/transform_reduce.hpp>

@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #ifndef BOOST_COMPUTE_DETAIL_VENDOR_HPP
@@ -21,7 +21,8 @@ namespace detail {
 // returns true if the device is an nvidia gpu
 inline bool is_nvidia_device(const device &device)
 {
-    return device.vendor() == "NVIDIA Corporation";
+    std::string nvidia("NVIDIA");
+    return device.vendor().compare(0, nvidia.size(), nvidia) == 0;
 }
 
 // returns true if the device is an amd cpu or gpu

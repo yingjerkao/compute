@@ -5,13 +5,15 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #ifndef BOOST_COMPUTE_ALGORITHM_DETAIL_INPLACE_REDUCE_HPP
 #define BOOST_COMPUTE_ALGORITHM_DETAIL_INPLACE_REDUCE_HPP
 
 #include <iterator>
+
+#include <boost/utility/result_of.hpp>
 
 #include <boost/compute/command_queue.hpp>
 #include <boost/compute/container/vector.hpp>

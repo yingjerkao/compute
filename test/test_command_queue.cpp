@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #define BOOST_TEST_MODULE TestCommandQueue
@@ -21,6 +21,7 @@
 #include <boost/compute/container/vector.hpp>
 #include <boost/compute/utility/dim.hpp>
 #include <boost/compute/utility/source.hpp>
+#include <boost/compute/detail/diagnostic.hpp>
 
 #include "check_macros.hpp"
 #include "context_setup.hpp"
@@ -137,13 +138,20 @@ BOOST_AUTO_TEST_CASE(kernel_profiling)
 BOOST_AUTO_TEST_CASE(construct_from_cl_command_queue)
 {
     // create cl_command_queue
+    cl_command_queue cl_queue;
 #ifdef CL_VERSION_2_0
-    cl_command_queue cl_queue =
-      clCreateCommandQueueWithProperties(context, device.id(), 0, 0);
-#else
-    cl_command_queue cl_queue =
-      clCreateCommandQueue(context, device.id(), 0, 0);
-#endif
+    if (device.check_version(2, 0)){ // runtime check
+        cl_queue =
+            clCreateCommandQueueWithProperties(context, device.id(), 0, 0);
+    } else
+#endif // CL_VERSION_2_0
+    {
+        // Suppress deprecated declarations warning
+        BOOST_COMPUTE_DISABLE_DEPRECATED_DECLARATIONS();
+        cl_queue =
+            clCreateCommandQueue(context, device.id(), 0, 0);
+        BOOST_COMPUTE_ENABLE_DEPRECATED_DECLARATIONS();
+    }
     BOOST_VERIFY(cl_queue);
 
     // create boost::compute::command_queue
@@ -160,10 +168,12 @@ BOOST_AUTO_TEST_CASE(construct_from_cl_command_queue)
 #ifdef CL_VERSION_1_1
 BOOST_AUTO_TEST_CASE(write_buffer_rect)
 {
+    REQUIRES_OPENCL_VERSION(1, 1);
+
     // skip this test on AMD GPUs due to a buggy implementation
     // of the clEnqueueWriteBufferRect() function
     if(device.vendor() == "Advanced Micro Devices, Inc." &&
-       device.type() == boost::compute::device::gpu){
+       device.type() & boost::compute::device::gpu){
         std::cerr << "skipping write_buffer_rect test on AMD GPU" << std::endl;
         return;
     }
@@ -272,6 +282,29 @@ BOOST_AUTO_TEST_CASE(enqueue_kernel_with_extents)
 
     kernel.set_arg(0, output1);
     kernel.set_arg(1, output2);
+
+    queue.enqueue_nd_range_kernel(kernel, dim(0, 0), dim(4, 4), dim(1, 1));
+
+    CHECK_RANGE_EQUAL(int, 4, output1, (0, 0, 0, 0));
+    CHECK_RANGE_EQUAL(int, 4, output2, (0, 0, 0, 0));
+
+    // Maximum number of work-items that can be specified in each
+    // dimension of the work-group to clEnqueueNDRangeKernel.
+    std::vector<size_t> max_work_item_sizes =
+        device.get_info<CL_DEVICE_MAX_WORK_ITEM_SIZES>();
+
+    if(max_work_item_sizes[0] < size_t(2)) {
+        return;
+    }
+
+    queue.enqueue_nd_range_kernel(kernel, dim(0, 0), dim(4, 4), dim(2, 1));
+
+    CHECK_RANGE_EQUAL(int, 4, output1, (0, 1, 0, 1));
+    CHECK_RANGE_EQUAL(int, 4, output2, (0, 0, 0, 0));
+
+    if(max_work_item_sizes[1] < size_t(2)) {
+        return;
+    }
 
     queue.enqueue_nd_range_kernel(kernel, dim(0, 0), dim(4, 4), dim(2, 2));
 

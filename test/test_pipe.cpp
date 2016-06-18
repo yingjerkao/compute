@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #define BOOST_TEST_MODULE TestPipe
@@ -25,6 +25,8 @@ BOOST_AUTO_TEST_CASE(empty)
 #ifdef CL_VERSION_2_0
 BOOST_AUTO_TEST_CASE(create_pipe)
 {
+    REQUIRES_OPENCL_VERSION(2, 0);
+
     compute::pipe pipe(context, 16 * sizeof(float), 128);
     BOOST_CHECK_EQUAL(pipe.get_info<CL_PIPE_PACKET_SIZE>(), 64);
     BOOST_CHECK_EQUAL(pipe.get_info<CL_PIPE_MAX_PACKETS>(), 128);

@@ -1,5 +1,12 @@
 #!/usr/bin/python
 
+# Copyright (c) 2014 Kyle Lutz <kyle.r.lutz@gmail.com>
+# Distributed under the Boost Software License, Version 1.0
+# See accompanying file LICENSE_1_0.txt or copy at
+# http://www.boost.org/LICENSE_1_0.txt
+#
+# See http://boostorg.github.com/compute for more information.
+
 import os
 import sys
 import pylab
@@ -16,7 +23,8 @@ def plot_to_file(report, filename):
     run_to_label = {
         "stl" : "C++ STL",
         "thrust" : "Thrust",
-        "compute" : "Boost.Compute"
+        "compute" : "Boost.Compute",
+        "bolt" : "Bolt"
     }
 
     for run in sorted(report.samples.keys()):
@@ -57,6 +65,6 @@ if __name__ == '__main__':
 
     for algorithm in algorithms:
         print("running '%s'" % (algorithm))
-        report = run_benchmark(algorithm, sizes, ["stl", "thrust"])
+        report = run_benchmark(algorithm, sizes, ["stl", "thrust", "bolt"])
         plot_to_file(report, "perf_plots/%s_time_plot.png" % algorithm)
 

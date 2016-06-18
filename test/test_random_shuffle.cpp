@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #define BOOST_TEST_MODULE TestRandomShuffle
@@ -26,10 +26,10 @@ namespace bc = boost::compute;
 BOOST_AUTO_TEST_CASE(shuffle_int_vector)
 {
     bc::vector<int> vector(context);
-    vector.push_back(1);
-    vector.push_back(9);
-    vector.push_back(19);
-    vector.push_back(29);
+    vector.push_back(1, queue);
+    vector.push_back(9, queue);
+    vector.push_back(19, queue);
+    vector.push_back(29, queue);
 
     std::set<int> original_values;
     for(size_t i = 0; i < vector.size(); i++){

@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #define BOOST_TEST_MODULE TestReduce
@@ -264,6 +264,16 @@ BOOST_AUTO_TEST_CASE(reduce_complex)
         vector.begin(), vector.end(), &result, compute::multiplies<std::complex<float> >(), queue
     );
     BOOST_CHECK(result == std::complex<float>(-168, -576));
+}
+
+BOOST_AUTO_TEST_CASE(reduce_uchar_to_float)
+{
+    compute::vector<compute::uchar_> data;
+    data.push_back(250, queue);
+    data.push_back(250, queue);
+    float sum = 0;
+    compute::reduce(data.begin(), data.end(), &sum, compute::plus<float>(), queue);
+    BOOST_CHECK_EQUAL(sum, 500);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

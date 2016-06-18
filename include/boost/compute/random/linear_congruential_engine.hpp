@@ -5,11 +5,13 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #ifndef BOOST_COMPUTE_RANDOM_LINEAR_CONGRUENTIAL_ENGINE_HPP
 #define BOOST_COMPUTE_RANDOM_LINEAR_CONGRUENTIAL_ENGINE_HPP
+
+#include <algorithm>
 
 #include <boost/compute/types.hpp>
 #include <boost/compute/buffer.hpp>
@@ -63,6 +65,7 @@ public:
     /// Creates a new linear_congruential_engine object as a copy of \p other.
     linear_congruential_engine(const linear_congruential_engine<T> &other)
         : m_context(other.m_context),
+          m_program(other.m_program),
           m_seed(other.m_seed),
           m_multiplicands(other.m_multiplicands)
     {
@@ -74,6 +77,9 @@ public:
     {
         if(this != &other){
             m_context = other.m_context;
+            m_program = other.m_program;
+            m_seed = other.m_seed;
+            m_multiplicands = other.m_multiplicands;
         }
 
         return *this;
@@ -100,7 +106,7 @@ public:
     /// \overload
     void seed(command_queue &queue)
     {
-        seed(default_seed);
+        seed(default_seed, queue);
     }
 
     /// Generates random numbers and stores them to the range [\p first, \p last).
@@ -118,7 +124,7 @@ public:
         for(;;){
             size_t count = 0;
             if(size > threads){
-                count = threads;
+                count = (std::min)(static_cast<size_t>(threads), size - offset);
             }
             else {
                 count = size;

@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #include <vector>
@@ -19,8 +19,8 @@ int main(int argc, char *argv[])
     perf_parse_args(argc, argv);
 
     std::cout << "size: " << PERF_N << std::endl;
-    std::vector<int> v1 = generate_random_vector<int>(PERF_N / 2);
-    std::vector<int> v2 = generate_random_vector<int>(PERF_N / 2);
+    std::vector<int> v1 = generate_random_vector<int>(std::floor(PERF_N / 2.0));
+    std::vector<int> v2 = generate_random_vector<int>(std::ceil(PERF_N / 2.0));
     std::vector<int> v3(PERF_N);
 
     std::sort(v1.begin(), v1.end());

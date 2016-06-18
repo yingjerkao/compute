@@ -5,17 +5,18 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #ifndef BOOST_COMPUTE_PLATFORM_HPP
 #define BOOST_COMPUTE_PLATFORM_HPP
 
+#include <algorithm>
 #include <string>
 #include <vector>
 
-#include <boost/range/algorithm.hpp>
-#include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/classification.hpp>
 
 #include <boost/compute/cl.hpp>
 #include <boost/compute/device.hpp>
@@ -112,7 +113,8 @@ public:
     {
         const std::vector<std::string> extensions = this->extensions();
 
-        return boost::find(extensions, name) != extensions.end();
+        return std::find(
+            extensions.begin(), extensions.end(), name) != extensions.end();
     }
 
     /// Returns a list of devices on the platform.

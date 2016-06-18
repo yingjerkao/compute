@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #define BOOST_TEST_MODULE TestFunctionalBind
@@ -98,14 +98,14 @@ BOOST_AUTO_TEST_CASE(compare_less_than)
 
     int count = boost::compute::count_if(
         vector.begin(), vector.end(),
-        compute::bind(compute::less<int>(), _1, 3),
+        compute::bind(compute::less<int>(), _1, int(3)),
         queue
     );
     BOOST_CHECK_EQUAL(count, 2);
 
     count = boost::compute::count_if(
         vector.begin(), vector.end(),
-        compute::bind(compute::less<int>(), 3, _1),
+        compute::bind(compute::less<int>(), int(3), _1),
         queue
     );
     BOOST_CHECK_EQUAL(count, 1);

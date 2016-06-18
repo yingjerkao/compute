@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #define BOOST_TEST_MODULE TestWaitList
@@ -29,10 +29,22 @@ namespace compute = boost::compute;
 BOOST_AUTO_TEST_CASE(create_wait_list)
 {
     compute::wait_list events;
-    BOOST_CHECK_EQUAL(events.size(), 0);
+    BOOST_CHECK_EQUAL(events.size(), size_t(0));
     BOOST_CHECK_EQUAL(events.empty(), true);
     BOOST_CHECK(events.get_event_ptr() == 0);
 }
+
+#ifndef BOOST_COMPUTE_NO_HDR_INITIALIZER_LIST
+BOOST_AUTO_TEST_CASE(create_wait_list_from_initializer_list)
+{
+    compute::event event0;
+    compute::event event1;
+    compute::event event2;
+    compute::wait_list events = { event0, event1, event2 };
+    BOOST_CHECK_EQUAL(events.size(), size_t(3));
+    CHECK_RANGE_EQUAL(compute::event, 3, events, (event0, event1, event2));
+}
+#endif // BOOST_COMPUTE_NO_HDR_INITIALIZER_LIST
 
 BOOST_AUTO_TEST_CASE(insert_future)
 {
@@ -53,7 +65,7 @@ BOOST_AUTO_TEST_CASE(insert_future)
 
     // add future event to the wait list
     events.insert(future);
-    BOOST_CHECK_EQUAL(events.size(), 1);
+    BOOST_CHECK_EQUAL(events.size(), size_t(1));
     BOOST_CHECK(events.get_event_ptr() != 0);
 
     // wait for copy to complete
@@ -64,7 +76,7 @@ BOOST_AUTO_TEST_CASE(insert_future)
 
     // clear the event list
     events.clear();
-    BOOST_CHECK_EQUAL(events.size(), 0);
+    BOOST_CHECK_EQUAL(events.size(), size_t(0));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

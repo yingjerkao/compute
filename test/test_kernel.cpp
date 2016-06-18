@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #define BOOST_TEST_MODULE TestKernel
@@ -101,7 +101,7 @@ BOOST_AUTO_TEST_CASE(get_work_group_info)
     BOOST_CHECK(work_group_size >= 1);
 }
 
-#ifndef BOOST_NO_VARIADIC_TEMPLATES
+#ifndef BOOST_COMPUTE_NO_VARIADIC_TEMPLATES
 BOOST_AUTO_TEST_CASE(kernel_set_args)
 {
     compute::kernel k = compute::kernel::create_with_source(
@@ -110,7 +110,7 @@ BOOST_AUTO_TEST_CASE(kernel_set_args)
 
     k.set_args(4, 2.4f, 'a');
 }
-#endif
+#endif // BOOST_COMPUTE_NO_VARIADIC_TEMPLATES
 
 #ifdef CL_VERSION_1_2
 BOOST_AUTO_TEST_CASE(get_arg_info)
@@ -137,7 +137,7 @@ BOOST_AUTO_TEST_CASE(get_arg_info)
 
     compute::kernel kernel = program.create_kernel("sum_kernel");
 
-    BOOST_CHECK_EQUAL(kernel.get_info<CL_KERNEL_NUM_ARGS>(), 3);
+    BOOST_CHECK_EQUAL(kernel.get_info<CL_KERNEL_NUM_ARGS>(), compute::uint_(3));
 
     BOOST_CHECK_EQUAL(kernel.get_arg_info<std::string>(0, CL_KERNEL_ARG_TYPE_NAME), "int*");
     BOOST_CHECK_EQUAL(kernel.get_arg_info<std::string>(0, CL_KERNEL_ARG_NAME), "input");
@@ -145,6 +145,13 @@ BOOST_AUTO_TEST_CASE(get_arg_info)
     BOOST_CHECK_EQUAL(kernel.get_arg_info<std::string>(1, CL_KERNEL_ARG_NAME), "size");
     BOOST_CHECK_EQUAL(kernel.get_arg_info<std::string>(2, CL_KERNEL_ARG_TYPE_NAME), "int*");
     BOOST_CHECK_EQUAL(kernel.get_arg_info<std::string>(2, CL_KERNEL_ARG_NAME), "result");
+
+    BOOST_CHECK_EQUAL(kernel.get_arg_info<CL_KERNEL_ARG_TYPE_NAME>(0), "int*");
+    BOOST_CHECK_EQUAL(kernel.get_arg_info<CL_KERNEL_ARG_NAME>(0), "input");
+    BOOST_CHECK_EQUAL(kernel.get_arg_info<CL_KERNEL_ARG_TYPE_NAME>(1), "uint");
+    BOOST_CHECK_EQUAL(kernel.get_arg_info<CL_KERNEL_ARG_NAME>(1), "size");
+    BOOST_CHECK_EQUAL(kernel.get_arg_info<CL_KERNEL_ARG_TYPE_NAME>(2), "int*");
+    BOOST_CHECK_EQUAL(kernel.get_arg_info<CL_KERNEL_ARG_NAME>(2), "result");
 }
 #endif // CL_VERSION_1_2
 

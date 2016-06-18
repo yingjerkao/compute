@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #define BOOST_TEST_MODULE TestGenerate
@@ -27,8 +27,8 @@ namespace bc = boost::compute;
 
 BOOST_AUTO_TEST_CASE(generate4)
 {
-    bc::vector<int> vector(4);
-    bc::fill(vector.begin(), vector.end(), 2);
+    bc::vector<int> vector(4, context);
+    bc::fill(vector.begin(), vector.end(), 2, queue);
     CHECK_RANGE_EQUAL(int, 4, vector, (2, 2, 2, 2));
 
     BOOST_COMPUTE_FUNCTION(int, ret4, (void),
@@ -36,7 +36,7 @@ BOOST_AUTO_TEST_CASE(generate4)
         return 4;
     });
 
-    bc::generate(vector.begin(), vector.end(), ret4);
+    bc::generate(vector.begin(), vector.end(), ret4, queue);
     CHECK_RANGE_EQUAL(int, 4, vector, (4, 4, 4, 4));
 }
 

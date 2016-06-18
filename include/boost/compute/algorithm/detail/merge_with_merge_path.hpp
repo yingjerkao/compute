@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #ifndef BOOST_COMPUTE_ALGORITHM_DETAIL_MERGE_WIH_MERGE_PATH_HPP
@@ -43,12 +43,12 @@ public:
              class InputIterator3, class InputIterator4,
              class OutputIterator, class Compare>
     void set_range(InputIterator1 first1,
-                    InputIterator2 first2,
-                    InputIterator3 tile_first1,
-                    InputIterator3 tile_last1,
-                    InputIterator4 tile_first2,
-                    OutputIterator result,
-                    Compare comp)
+                   InputIterator2 first2,
+                   InputIterator3 tile_first1,
+                   InputIterator3 tile_last1,
+                   InputIterator4 tile_first2,
+                   OutputIterator result,
+                   Compare comp)
     {
         m_count = iterator_range_size(tile_first1, tile_last1) - 1;
 
@@ -97,11 +97,11 @@ public:
              class InputIterator3, class InputIterator4,
              class OutputIterator>
     void set_range(InputIterator1 first1,
-                    InputIterator2 first2,
-                    InputIterator3 tile_first1,
-                    InputIterator3 tile_last1,
-                    InputIterator4 tile_first2,
-                    OutputIterator result)
+                   InputIterator2 first2,
+                   InputIterator3 tile_first1,
+                   InputIterator3 tile_last1,
+                   InputIterator4 tile_first2,
+                   OutputIterator result)
     {
         typedef typename std::iterator_traits<InputIterator1>::value_type value_type;
         ::boost::compute::less<value_type> less_than;
@@ -140,53 +140,56 @@ private:
 template<class InputIterator1, class InputIterator2, class OutputIterator, class Compare>
 inline OutputIterator
 merge_with_merge_path(InputIterator1 first1,
-                        InputIterator1 last1,
-                        InputIterator2 first2,
-                        InputIterator2 last2,
-                        OutputIterator result,
-                        Compare comp,
-                        command_queue &queue = system::default_queue())
+                      InputIterator1 last1,
+                      InputIterator2 first2,
+                      InputIterator2 last2,
+                      OutputIterator result,
+                      Compare comp,
+                      command_queue &queue = system::default_queue())
 {
-    int tile_size = 1024;
+    typedef typename
+        std::iterator_traits<OutputIterator>::difference_type result_difference_type;
 
-    int count1 = iterator_range_size(first1, last1);
-    int count2 = iterator_range_size(first2, last2);
+    size_t tile_size = 1024;
+
+    size_t count1 = iterator_range_size(first1, last1);
+    size_t count2 = iterator_range_size(first2, last2);
 
     vector<uint_> tile_a((count1+count2+tile_size-1)/tile_size+1, queue.get_context());
     vector<uint_> tile_b((count1+count2+tile_size-1)/tile_size+1, queue.get_context());
 
     // Tile the sets
     merge_path_kernel tiling_kernel;
-    tiling_kernel.tile_size = 1024;
+    tiling_kernel.tile_size = static_cast<unsigned int>(tile_size);
     tiling_kernel.set_range(first1, last1, first2, last2,
                             tile_a.begin()+1, tile_b.begin()+1, comp);
-    fill_n(tile_a.begin(), 1, 0, queue);
-    fill_n(tile_b.begin(), 1, 0, queue);
+    fill_n(tile_a.begin(), 1, uint_(0), queue);
+    fill_n(tile_b.begin(), 1, uint_(0), queue);
     tiling_kernel.exec(queue);
 
-    fill_n(tile_a.end()-1, 1, count1, queue);
-    fill_n(tile_b.end()-1, 1, count2, queue);
+    fill_n(tile_a.end()-1, 1, static_cast<uint_>(count1), queue);
+    fill_n(tile_b.end()-1, 1, static_cast<uint_>(count2), queue);
 
     // Merge
     serial_merge_kernel merge_kernel;
-    merge_kernel.tile_size = 1024;
+    merge_kernel.tile_size = static_cast<unsigned int>(tile_size);
     merge_kernel.set_range(first1, first2, tile_a.begin(), tile_a.end(),
-                            tile_b.begin(), result, comp);
+                           tile_b.begin(), result, comp);
 
     merge_kernel.exec(queue);
 
-    return result + count1 + count2;
+    return result + static_cast<result_difference_type>(count1 + count2);
 }
 
 /// \overload
 template<class InputIterator1, class InputIterator2, class OutputIterator>
 inline OutputIterator
 merge_with_merge_path(InputIterator1 first1,
-                        InputIterator1 last1,
-                        InputIterator2 first2,
-                        InputIterator2 last2,
-                        OutputIterator result,
-                        command_queue &queue = system::default_queue())
+                      InputIterator1 last1,
+                      InputIterator2 first2,
+                      InputIterator2 last2,
+                      OutputIterator result,
+                      command_queue &queue = system::default_queue())
 {
     typedef typename std::iterator_traits<InputIterator1>::value_type value_type;
     ::boost::compute::less<value_type> less_than;

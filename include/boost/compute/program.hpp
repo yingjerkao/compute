@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #ifndef BOOST_COMPUTE_PROGRAM_HPP
@@ -28,9 +28,9 @@
 #ifdef BOOST_COMPUTE_USE_OFFLINE_CACHE
 #include <sstream>
 #include <boost/optional.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/compute/platform.hpp>
 #include <boost/compute/detail/getenv.hpp>
+#include <boost/compute/detail/path.hpp>
 #include <boost/compute/detail/sha1.hpp>
 #endif
 
@@ -385,6 +385,30 @@ public:
         return program(program_, false);
     }
 
+    /// Creates a new program with \p sources in \p context.
+    ///
+    /// \see_opencl_ref{clCreateProgramWithSource}
+    static program create_with_source(const std::vector<std::string> &sources,
+                                      const context &context)
+    {
+        std::vector<const char*> source_strings(sources.size());
+        for(size_t i = 0; i < sources.size(); i++){
+            source_strings[i] = sources[i].c_str();
+        }
+
+        cl_int error = 0;
+        cl_program program_ = clCreateProgramWithSource(context,
+                                                        uint_(sources.size()),
+                                                        &source_strings[0],
+                                                        0,
+                                                        &error);
+        if(!program_){
+            BOOST_THROW_EXCEPTION(opencl_error(error));
+        }
+
+        return program(program_, false);
+    }
+
     /// Creates a new program with \p file in \p context.
     ///
     /// \see_opencl_ref{clCreateProgramWithSource}
@@ -393,6 +417,10 @@ public:
     {
         // open file stream
         std::ifstream stream(file.c_str());
+
+        if(stream.fail()){
+          BOOST_THROW_EXCEPTION(std::ios_base::failure("failed to create stream."));
+        }
 
         // read source
         std::string source(
@@ -505,19 +533,16 @@ public:
     {
 #ifdef BOOST_COMPUTE_USE_OFFLINE_CACHE
         // Get hash string for the kernel.
-        std::string hash;
-        {
-            device   d(context.get_device());
-            platform p = d.platform();
+        device   d = context.get_device();
+        platform p = d.platform();
 
-            std::ostringstream src;
-            src << "// " << p.name() << " v" << p.version() << "\n"
-                << "// " << context.get_device().name() << "\n"
-                << "// " << options << "\n\n"
-                << source;
-
-            hash = detail::sha1(src.str());
-        }
+        detail::sha1 hash;
+        hash.process( p.name()    )
+            .process( p.version() )
+            .process( d.name()    )
+            .process( options     )
+            .process( source      )
+            ;
 
         // Try to get cached program binaries:
         try {
@@ -558,41 +583,10 @@ public:
 
 private:
 #ifdef BOOST_COMPUTE_USE_OFFLINE_CACHE
-    // Path delimiter symbol for the current OS.
-    static const std::string& path_delim() {
-        static const std::string delim =
-            boost::filesystem::path("/").make_preferred().string();
-        return delim;
-    }
-
-    // Path to appdata folder.
-    static inline const std::string& appdata_path() {
-#ifdef WIN32
-        static const std::string appdata = detail::getenv("APPDATA")
-            + path_delim() + "boost_compute";
-#else
-        static const std::string appdata = detail::getenv("HOME")
-            + path_delim() + ".boost_compute";
-#endif
-        return appdata;
-    }
-
-    // Path to cached binaries.
-    static std::string program_binary_path(const std::string &hash, bool create = false)
-    {
-        std::string dir = appdata_path()    + path_delim()
-                        + hash.substr(0, 2) + path_delim()
-                        + hash.substr(2);
-
-        if (create) boost::filesystem::create_directories(dir);
-
-        return dir + path_delim();
-    }
-
     // Saves program binaries for future reuse.
     static void save_program_binary(const std::string &hash, const program &prog)
     {
-        std::string fname = program_binary_path(hash, true) + "kernel";
+        std::string fname = detail::program_binary_path(hash, true) + "kernel";
         std::ofstream bfile(fname.c_str(), std::ios::binary);
         if (!bfile) return;
 
@@ -608,7 +602,7 @@ private:
             const std::string &hash, const context &ctx
             )
     {
-        std::string fname = program_binary_path(hash) + "kernel";
+        std::string fname = detail::program_binary_path(hash) + "kernel";
         std::ifstream bfile(fname.c_str(), std::ios::binary);
         if (!bfile) return boost::optional<program>();
 

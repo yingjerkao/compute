@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #define BOOST_TEST_MODULE TestClosure
@@ -179,8 +179,10 @@ BOOST_AUTO_TEST_CASE(triangle_area)
     triangle_vertices.push_back(float4_(1, 0, 0, 1), queue);
     triangle_vertices.push_back(float4_(2, 0, 0, 1), queue);
 
-    triangle_indices.push_back(uint4_(0, 1, 2, 0));
-    triangle_indices.push_back(uint4_(2, 1, 3, 0));
+    triangle_indices.push_back(uint4_(0, 1, 2, 0), queue);
+    triangle_indices.push_back(uint4_(2, 1, 3, 0), queue);
+
+    queue.finish();
 
     BOOST_COMPUTE_CLOSURE(float, triangle_area, (const uint4_ i), (triangle_vertices),
     {

@@ -5,11 +5,16 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #ifndef BOOST_COMPUTE_RANDOM_UNIFORM_INT_DISTRIBUTION_HPP
 #define BOOST_COMPUTE_RANDOM_UNIFORM_INT_DISTRIBUTION_HPP
+
+#include <limits>
+
+#include <boost/type_traits.hpp>
+#include <boost/static_assert.hpp>
 
 #include <boost/compute/command_queue.hpp>
 #include <boost/compute/container/vector.hpp>
@@ -37,7 +42,8 @@ public:
 
     /// Creates a new uniform distribution producing numbers in the range
     /// [\p a, \p b].
-    uniform_int_distribution(IntType a = 0, IntType b = 1)
+    explicit uniform_int_distribution(IntType a = 0,
+                                      IntType b = (std::numeric_limits<IntType>::max)())
         : m_a(a),
           m_b(b)
     {
@@ -100,6 +106,11 @@ public:
 private:
     IntType m_a;
     IntType m_b;
+
+    BOOST_STATIC_ASSERT_MSG(
+        boost::is_integral<IntType>::value,
+        "Template argument must be integral"
+    );
 };
 
 } // end compute namespace

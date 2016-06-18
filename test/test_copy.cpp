@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #define BOOST_TEST_MODULE TestCopy
@@ -16,6 +16,7 @@
 #include <string>
 #include <sstream>
 #include <iterator>
+#include <iostream>
 
 #include <boost/compute/svm.hpp>
 #include <boost/compute/system.hpp>
@@ -27,8 +28,10 @@
 #include <boost/compute/algorithm/iota.hpp>
 #include <boost/compute/async/future.hpp>
 #include <boost/compute/container/vector.hpp>
+#include <boost/compute/detail/device_ptr.hpp>
 #include <boost/compute/iterator/detail/swizzle_iterator.hpp>
 
+#include "quirks.hpp"
 #include "check_macros.hpp"
 #include "context_setup.hpp"
 
@@ -38,39 +41,93 @@ namespace compute = boost::compute;
 BOOST_AUTO_TEST_CASE(copy_on_device)
 {
     float data[] = { 6.1f, 10.2f, 19.3f, 25.4f };
-    bc::vector<float> a(4);
-    bc::copy(data, data + 4, a.begin());
+    bc::vector<float> a(4, context);
+    bc::copy(data, data + 4, a.begin(), queue);
     CHECK_RANGE_EQUAL(float, 4, a, (6.1f, 10.2f, 19.3f, 25.4f));
 
-    bc::vector<float> b(4);
-    bc::fill(b.begin(), b.end(), 0);
+    bc::vector<float> b(4, context);
+    bc::fill(b.begin(), b.end(), 0, queue);
     CHECK_RANGE_EQUAL(float, 4, b, (0.0f, 0.0f, 0.0f, 0.0f));
 
-    bc::copy(a.begin(), a.end(), b.begin());
+    bc::copy(a.begin(), a.end(), b.begin(), queue);
     CHECK_RANGE_EQUAL(float, 4, b, (6.1f, 10.2f, 19.3f, 25.4f));
+
+    bc::vector<float> c(context);
+    bc::copy(c.begin(), c.end(), b.begin(), queue);
+    CHECK_RANGE_EQUAL(float, 4, b, (6.1f, 10.2f, 19.3f, 25.4f));
+}
+
+BOOST_AUTO_TEST_CASE(copy_on_device_device_ptr)
+{
+    float data[] = { 6.1f, 10.2f, 19.3f, 25.4f };
+    bc::vector<float> a(4, context);
+    bc::copy(data, data + 4, a.begin(), queue);
+    CHECK_RANGE_EQUAL(float, 4, a, (6.1f, 10.2f, 19.3f, 25.4f));
+
+    bc::vector<float> b(4, context);
+    bc::detail::device_ptr<float> b_ptr(b.get_buffer(), size_t(0));
+
+    // buffer_iterator -> device_ptr
+    bc::copy(a.begin(), a.end(), b_ptr, queue);
+    CHECK_RANGE_EQUAL(float, 4, b, (6.1f, 10.2f, 19.3f, 25.4f));
+
+    bc::vector<float> c(4, context);
+    bc::fill(c.begin(), c.end(), 0.0f, queue);
+    bc::detail::device_ptr<float> c_ptr(c.get_buffer(), size_t(2));
+
+    // device_ptr -> device_ptr
+    bc::copy(b_ptr, b_ptr + 2, c_ptr, queue);
+    CHECK_RANGE_EQUAL(float, 4, c, (0.0f, 0.0f, 6.1f, 10.2f));
+
+    // device_ptr -> buffer_iterator
+    bc::copy(c_ptr, c_ptr + 2, a.begin() + 2, queue);
+    CHECK_RANGE_EQUAL(float, 4, a, (6.1f, 10.2f, 6.1f, 10.2f));
 }
 
 BOOST_AUTO_TEST_CASE(copy_on_host)
 {
     int data[] = { 2, 4, 6, 8 };
     std::vector<int> vector(4);
-    compute::copy(data, data + 4, vector.begin());
+    compute::copy(data, data + 4, vector.begin(), queue);
     CHECK_RANGE_EQUAL(int, 4, vector, (2, 4, 6, 8));
 }
 
 BOOST_AUTO_TEST_CASE(copy)
 {
     int data[] = { 1, 2, 5, 6 };
-    bc::vector<int> vector(4);
-    bc::copy(data, data + 4, vector.begin());
+    bc::vector<int> vector(4, context);
+    bc::copy(data, data + 4, vector.begin(), queue);
     CHECK_RANGE_EQUAL(int, 4, vector, (1, 2, 5, 6));
 
     std::vector<int> host_vector(4);
-    bc::copy(vector.begin(), vector.end(), host_vector.begin());
+    bc::copy(vector.begin(), vector.end(), host_vector.begin(), queue);
     BOOST_CHECK_EQUAL(host_vector[0], 1);
     BOOST_CHECK_EQUAL(host_vector[1], 2);
     BOOST_CHECK_EQUAL(host_vector[2], 5);
     BOOST_CHECK_EQUAL(host_vector[3], 6);
+}
+
+BOOST_AUTO_TEST_CASE(empty_copy)
+{
+    int data[] = { 1, 2, 5, 6 };
+    bc::vector<int> a(4, context);
+    bc::vector<int> b(context);
+    std::vector<int> c;
+
+    bc::copy(data, data + 4, a.begin(), queue);
+    CHECK_RANGE_EQUAL(int, 4, a, (1, 2, 5, 6));
+
+    bc::copy(b.begin(), b.end(), a.begin(), queue);
+    CHECK_RANGE_EQUAL(int, 4, a, (1, 2, 5, 6));
+
+    bc::copy(c.begin(), c.end(), a.begin(), queue);
+    CHECK_RANGE_EQUAL(int, 4, a, (1, 2, 5, 6));
+
+    bc::future<bc::vector<int>::iterator> future =
+        bc::copy_async(c.begin(), c.end(), a.begin(), queue);
+    if(future.valid())
+        future.wait();
+    CHECK_RANGE_EQUAL(int, 4, a, (1, 2, 5, 6));
 }
 
 // Test copying from a std::list to a bc::vector. This differs from
@@ -81,22 +138,22 @@ BOOST_AUTO_TEST_CASE(copy_from_host_list)
     int data[] = { -4, 12, 9, 0 };
     std::list<int> host_list(data, data + 4);
 
-    bc::vector<int> vector(4);
-    bc::copy(host_list.begin(), host_list.end(), vector.begin());
+    bc::vector<int> vector(4, context);
+    bc::copy(host_list.begin(), host_list.end(), vector.begin(), queue);
     CHECK_RANGE_EQUAL(int, 4, vector, (-4, 12, 9, 0));
 }
 
 BOOST_AUTO_TEST_CASE(copy_n_int)
 {
     int data[] = { 1, 2, 3, 4, 5 };
-    bc::vector<int> a(data, data + 5);
+    bc::vector<int> a(data, data + 5, queue);
 
-    bc::vector<int> b(5);
-    bc::fill(b.begin(), b.end(), 0);
-    bc::copy_n(a.begin(), 3, b.begin());
+    bc::vector<int> b(5, context);
+    bc::fill(b.begin(), b.end(), 0, queue);
+    bc::copy_n(a.begin(), 3, b.begin(), queue);
     CHECK_RANGE_EQUAL(int, 5, b, (1, 2, 3, 0, 0));
 
-    bc::copy_n(b.begin(), 4, a.begin());
+    bc::copy_n(b.begin(), 4, a.begin(), queue);
     CHECK_RANGE_EQUAL(int, 5, a, (1, 2, 3, 0, 5));
 }
 
@@ -111,7 +168,8 @@ BOOST_AUTO_TEST_CASE(copy_swizzle_iterator)
                    4, 5, 6, 7 };
 
     bc::vector<int4_> input(reinterpret_cast<int4_*>(data),
-                            reinterpret_cast<int4_*>(data) + 4);
+                            reinterpret_cast<int4_*>(data) + 4,
+                            queue);
     BOOST_CHECK_EQUAL(input.size(), size_t(4));
     CHECK_RANGE_EQUAL(int4_, 4, input,
         (int4_(1, 2, 3, 4),
@@ -120,11 +178,12 @@ BOOST_AUTO_TEST_CASE(copy_swizzle_iterator)
          int4_(4, 5, 6, 7))
     );
 
-    bc::vector<int4_> output4(4);
+    bc::vector<int4_> output4(4, context);
     bc::copy(
         bc::detail::make_swizzle_iterator<4>(input.begin(), "wzyx"),
         bc::detail::make_swizzle_iterator<4>(input.end(), "wzyx"),
-        output4.begin()
+        output4.begin(),
+        queue
     );
     CHECK_RANGE_EQUAL(int4_, 4, output4,
         (int4_(4, 3, 2, 1),
@@ -133,11 +192,12 @@ BOOST_AUTO_TEST_CASE(copy_swizzle_iterator)
          int4_(7, 6, 5, 4))
     );
 
-    bc::vector<int2_> output2(4);
+    bc::vector<int2_> output2(4, context);
     bc::copy(
         bc::detail::make_swizzle_iterator<2>(input.begin(), "xz"),
         bc::detail::make_swizzle_iterator<2>(input.end(), "xz"),
-        output2.begin()
+        output2.begin(),
+        queue
     );
     CHECK_RANGE_EQUAL(int2_, 4, output2,
         (int2_(1, 3),
@@ -146,11 +206,12 @@ BOOST_AUTO_TEST_CASE(copy_swizzle_iterator)
          int2_(4, 6))
     );
 
-    bc::vector<int> output1(4);
+    bc::vector<int> output1(4, context);
     bc::copy(
         bc::detail::make_swizzle_iterator<1>(input.begin(), "y"),
         bc::detail::make_swizzle_iterator<1>(input.end(), "y"),
-        output1.begin()
+        output1.begin(),
+        queue
     );
     CHECK_RANGE_EQUAL(int, 4, output1, (2, 6, 1, 5));
 }
@@ -279,14 +340,50 @@ BOOST_AUTO_TEST_CASE(check_copy_type)
 #ifdef CL_VERSION_2_0
 BOOST_AUTO_TEST_CASE(copy_svm_ptr)
 {
-    int data[] = { 1, 3, 2, 4 };
+    REQUIRES_OPENCL_VERSION(2, 0);
 
-    compute::svm_ptr<int> ptr = compute::svm_alloc<int>(context, 4);
+    using boost::compute::int_;
+
+    if(bug_in_svmmemcpy(device)){
+        std::cerr << "skipping copy_svm_ptr test case" << std::endl;
+        return;
+    }
+
+    int_ data[] = { 1, 3, 2, 4 };
+
+    compute::svm_ptr<int_> ptr = compute::svm_alloc<int_>(context, 4);
     compute::copy(data, data + 4, ptr, queue);
 
-    int output[] = { 0, 0, 0, 0 };
+    int_ output[] = { 0, 0, 0, 0 };
     compute::copy(ptr, ptr + 4, output, queue);
-    CHECK_HOST_RANGE_EQUAL(int, 4, output, (1, 3, 2, 4));
+    CHECK_HOST_RANGE_EQUAL(int_, 4, output, (1, 3, 2, 4));
+
+    compute::svm_free(context, ptr);
+}
+
+BOOST_AUTO_TEST_CASE(copy_async_svm_ptr)
+{
+    REQUIRES_OPENCL_VERSION(2, 0);
+
+    using boost::compute::int_;
+
+    if(bug_in_svmmemcpy(device)){
+        std::cerr << "skipping copy_svm_ptr test case" << std::endl;
+        return;
+    }
+
+    int_ data[] = { 1, 3, 2, 4 };
+
+    compute::svm_ptr<int_> ptr = compute::svm_alloc<int_>(context, 4);
+    boost::compute::future<void> future =
+        compute::copy_async(data, data + 4, ptr, queue);
+    future.wait();
+
+    int_ output[] = { 0, 0, 0, 0 };
+    future =
+        compute::copy_async(ptr, ptr + 4, output, queue);
+    future.wait();
+    CHECK_HOST_RANGE_EQUAL(int_, 4, output, (1, 3, 2, 4));
 
     compute::svm_free(context, ptr);
 }
@@ -296,10 +393,15 @@ BOOST_AUTO_TEST_CASE(copy_to_vector_bool)
 {
     using compute::uchar_;
 
-    compute::vector<uchar_> vec;
-    vec.push_back(true, queue);
-    vec.push_back(false, queue);
+    compute::vector<uchar_> vec(2, context);
 
+    // copy to device
+    bool data[] = {true, false};
+    compute::copy(data, data + 2, vec.begin(), queue);
+    BOOST_CHECK(static_cast<bool>(vec[0]) == true);
+    BOOST_CHECK(static_cast<bool>(vec[1]) == false);
+
+    // copy to host
     std::vector<bool> host_vec(vec.size());
     compute::copy(vec.begin(), vec.end(), host_vec.begin(), queue);
     BOOST_CHECK(host_vec[0] == true);

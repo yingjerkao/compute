@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #ifndef BOOST_COMPUTE_TYPES_FUNDAMENTAL_HPP
@@ -14,7 +14,10 @@
 #include <cstring>
 #include <ostream>
 
-#include <boost/preprocessor.hpp>
+#include <boost/preprocessor/cat.hpp>
+#include <boost/preprocessor/comma.hpp>
+#include <boost/preprocessor/repetition.hpp>
+#include <boost/preprocessor/stringize.hpp>
 
 #include <boost/compute/cl.hpp>
 
@@ -50,6 +53,13 @@ public:
 
     vector_type()
     {
+
+    }
+
+    explicit vector_type(const Scalar scalar)
+    {
+        for(size_t i = 0; i < N; i++)
+            m_value[i] = scalar;
     }
 
     vector_type(const vector_type<Scalar, N> &other)
@@ -99,12 +109,18 @@ protected:
     BOOST_PP_REPEAT(size, BOOST_COMPUTE_VECTOR_TYPE_CTOR_ARG_FUNCTION, _)
 #define BOOST_COMPUTE_VECTOR_TYPE_ASSIGN_CTOR_ARG(z, i, _) \
     m_value[i] = BOOST_PP_CAT(arg, i);
+#define BOOST_COMPUTE_VECTOR_TYPE_ASSIGN_CTOR_SINGLE_ARG(z, i, _) \
+    m_value[i] = arg;
 
 #define BOOST_COMPUTE_DECLARE_VECTOR_TYPE_CLASS(cl_scalar, size, class_name) \
     class class_name : public vector_type<cl_scalar, size> \
     { \
     public: \
         class_name() { } \
+        explicit class_name( scalar_type arg ) \
+        { \
+            BOOST_PP_REPEAT(size, BOOST_COMPUTE_VECTOR_TYPE_ASSIGN_CTOR_SINGLE_ARG, _) \
+        } \
         class_name( \
             BOOST_PP_REPEAT(size, BOOST_COMPUTE_VECTOR_TYPE_CTOR_ARG_FUNCTION, _) \
         ) \

@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #ifndef BOOST_COMPUTE_ALGORITHM_DETAIL_SCAN_HPP
@@ -19,20 +19,22 @@ namespace boost {
 namespace compute {
 namespace detail {
 
-template<class InputIterator, class OutputIterator>
+template<class InputIterator, class OutputIterator, class T, class BinaryOperator>
 inline OutputIterator scan(InputIterator first,
                            InputIterator last,
                            OutputIterator result,
                            bool exclusive,
+                           T init,
+                           BinaryOperator op,
                            command_queue &queue)
 {
     const device &device = queue.get_device();
 
     if(device.type() & device::cpu){
-        return scan_on_cpu(first, last, result, exclusive, queue);
+        return scan_on_cpu(first, last, result, exclusive, init, op, queue);
     }
     else {
-        return scan_on_gpu(first, last, result, exclusive, queue);
+        return scan_on_gpu(first, last, result, exclusive, init, op, queue);
     }
 }
 

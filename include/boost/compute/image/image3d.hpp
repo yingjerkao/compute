@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #ifndef BOOST_COMPUTE_IMAGE_IMAGE3D_HPP
@@ -22,6 +22,9 @@
 
 namespace boost {
 namespace compute {
+
+// forward declarations
+class command_queue;
 
 /// \class image3d
 /// \brief An OpenCL 3D image object

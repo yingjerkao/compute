@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #ifndef BOOST_COMPUTE_DETAIL_WORK_SIZE_HPP
@@ -23,7 +23,7 @@ namespace detail {
 // passed to clEnqueueNDRangeKernel() for a 1D algorithm.
 inline size_t calculate_work_size(size_t count, size_t vpt, size_t tpb)
 {
-    size_t work_size = std::ceil(float(count) / vpt);
+    size_t work_size = static_cast<size_t>(std::ceil(float(count) / vpt));
     if(work_size % tpb != 0){
         work_size += tpb - work_size % tpb;
     }

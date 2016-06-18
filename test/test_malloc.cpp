@@ -5,7 +5,7 @@
 // See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt
 //
-// See http://kylelutz.github.com/compute for more information.
+// See http://boostorg.github.com/compute for more information.
 //---------------------------------------------------------------------------//
 
 #define BOOST_TEST_MODULE TestMalloc
@@ -20,7 +20,7 @@ namespace bc = boost::compute;
 
 BOOST_AUTO_TEST_CASE(malloc_int)
 {
-    bc::experimental::device_ptr<int> ptr = bc::experimental::malloc<int>(5);
+    bc::experimental::device_ptr<int> ptr = bc::experimental::malloc<int>(5, context);
 
     int input_data[] = { 2, 5, 8, 3, 6 };
     bc::copy(input_data, input_data + 5, ptr);
